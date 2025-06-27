@@ -108,7 +108,7 @@ void	init_rv(t_game *r)
 void	info_init(t_game *r)
 {
 	
-		//r->iters_change = 0;//for back compat
+	//r->iters_change = 0;//for back compat
 	if (!r->god)
 	{
 		r->iters_change = 0;//just added can use in adjust window to simplify current... is num times iters key change ,1, 2 etc
@@ -118,7 +118,7 @@ void	info_init(t_game *r)
 		r->move_x = 0.0;
 		r->move_y = 0.0;
 		r->zoom = 1.0;
-		r->sides = 3;///changed to 3 for now
+		r->sides = 3;
 		r->dist_ratio = .5;
 		//height and width based params
 		r->r = r->height / 2 - r->height / 10;
@@ -127,7 +127,6 @@ void	info_init(t_game *r)
 		r->max_distance = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);//changed from width/2 to dist to corner.
 	}
 	r->rv_len = 3;//change here and in header struct
-	
 	init_rv(r);
 }
 
@@ -151,9 +150,7 @@ void	game_init(t_game *r)
 	if (r->mlx_connect == NULL)
 		exit(EXIT_FAILURE);
 	r->mlx_win = mlx_new_window(r->mlx_connect, r->width, \
-		r->height, "******* THE  CHAOS  GAME *******");
-	//ft_putstr_color("----------NOT YET....\n", BLUE);
-	
+		r->height, "******* THE  CHAOS  GAME *******");	
 	if (r->mlx_win == NULL)
 	{
 		mlx_destroy_display(r->mlx_connect);

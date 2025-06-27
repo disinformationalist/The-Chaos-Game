@@ -60,7 +60,6 @@ static int	key_handler_3(int keysym, t_game *r)
 		r->iters_change -= 1;
 		if (r->iters_change < -4)
 			r->iters_change = -4;
-
 	}
 	else
 		key_handler_r(keysym, r);

@@ -21,6 +21,30 @@ static void	init_god(t_game *r, char **av)
 	free(god);	
 }
 
+static void	init_god2(t_game *r, char **av)
+{
+	char	*god;
+	
+	if (strncmp(av[3], "chaos", 5))
+	{
+		ft_putstr_color("File parameter must be a chaos game image\n", BOLD_RED);
+		exit (EXIT_FAILURE);
+	}
+	if (access(av[3], F_OK) != 0)
+	{
+		ft_putstr_color("Error: File does not exist\n", BOLD_RED);
+		exit (EXIT_FAILURE);
+	}
+	ft_putstr_color("LOADING...\n", BOLD_BRIGHT_GREEN);
+	r->god = true;
+	god = read_png_text_metadata(av[3]);
+	deserialize_game_data(r, god);
+	free(god);
+	r->width = ft_atoi(av[1]);
+	r->height = ft_atoi(av[2]);
+	//NEEDS iter adjust, poss color at size up open.
+}
+
 static void	not_god(t_game *r, int ac, char **av)
 {
 	// check av[1] and av[2] are pos numbers with set maximum
@@ -43,13 +67,12 @@ static void	not_god(t_game *r, int ac, char **av)
 int	main(int ac, char **av)
 {
 	t_game	r;
-	//-------try adding in xoro in place of rand
-
-//-------------------------
 
 //printf("the number of cores: %d\n", get_num_cores());
 	if (ac == 2)
 		init_god(&r, av);
+	else if (ac == 4)
+		init_god2(&r, av);
 	else
 		not_god(&r, ac, av);
 	game_init(&r);
@@ -60,6 +83,8 @@ int	main(int ac, char **av)
 		r.width = r.width * r.s_kernel;
 		r.height = r.height * r.s_kernel;
 	}
+	if (ac == 4)
+		r.r = r.height / 2 - r.height / 10;
 	if (r.god)
 		r.god = false;
 	intermed(&r);
