@@ -60,13 +60,19 @@ endef
 
 all: $(NAME)
 
-$(NAME): $(OBS)
+MLX_PATH := ./minilibx-linux
+
+$(NAME): build_mlx $(OBS)
 	$(CC) $(CFLAGS) $(OBS) -lm -Limage_processing -limage_processing -Lminilibx-linux -lmlx_Linux -lX11 -lXext -o $(NAME) -lpng
 	cp $(NAME) ../$(NAME)
 	$(call print_colored, "[SUCCESS]", "./$(NAME)", "Ready")
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+build_mlx:
+	$(MAKE) -C $(MLX_PATH)
 
 clean:
 	rm -rf $(OBS)

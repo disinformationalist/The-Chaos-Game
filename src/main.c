@@ -40,9 +40,16 @@ static void	init_god2(t_game *r, char **av)
 	god = read_png_text_metadata(av[3]);
 	deserialize_game_data(r, god);
 	free(god);
+	double max_change = r->max_distance - sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
 	r->width = ft_atoi(av[1]);
 	r->height = ft_atoi(av[2]);
-	//NEEDS iter adjust, poss color at size up open.
+	r->max_distance = sqrt(((r->width * r->width) + (r->height * r->height)) / 4) + max_change;
+	//r->iters = round(4 * ((double)r->iters / (((double)r->r * r->zoom) * ((double)r->r * r->zoom) * sqrt(3)) - 1));
+	//r->r = (r->height / 2 - r->height / 10);
+	//r->iters = round(((double)r->r * r->zoom) * ((double)r->r * r->zoom) * sqrt(3) * (1 + (double)r->iters / 4));
+	//r->max_distance = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
+
+//NEEDS iter adjust, poss color at size up open.
 }
 
 static void	not_god(t_game *r, int ac, char **av)

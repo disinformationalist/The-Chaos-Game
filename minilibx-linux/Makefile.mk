@@ -38,6 +38,8 @@ OBJ_DIR = obj
 OBJ	= $(addprefix $(OBJ_DIR)/,$(SRC:%.c=%.o))
 CFLAGS	= -O3 -I$(INC)
 
+.SILENT:
+
 all	: $(NAME)
 
 $(OBJ_DIR)/%.o: %.c
