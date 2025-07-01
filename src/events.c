@@ -28,6 +28,8 @@ int	ft_putstr_color_fd(int fd, char *s, char *color)
 
 int	close_screen(t_game *r)
 {
+	if (r->con)
+		free_controls(r->mlx_connect, r->con);
 	if (r->w_colors)
 		free(r->w_colors);
 	mlx_destroy_image(r->mlx_connect, r->img.img_ptr);
@@ -351,6 +353,8 @@ int	key_handler(int keysym, t_game *r)//place things not to rerender upon keypre
 	//printf("%d\n", keysym);
 	if (keysym == XK_Escape)
 		close_screen(r);
+	else if (keysym == F4)
+		controls(r);
 	else if (keysym == UP_CARET)
 		r->layer = !r->layer;
 	else if (keysym == F1)

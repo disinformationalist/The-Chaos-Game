@@ -123,9 +123,7 @@ static int	key_handler_other_3layer(int keysym, t_game *r)//avail 2nd layer
 
 static int	key_handler_other_2(int keysym, t_game *r)
 {
-	if (keysym == F4)
-		r->sides = 4;
-	else if (keysym == F5)
+	if (keysym == F5)
 		r->sides = 5;
 	else if (keysym == F6)
 		r->sides = 6;

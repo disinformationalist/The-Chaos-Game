@@ -32,6 +32,7 @@
 # include <stdint.h>
 # include "color_sets.h"
 
+
 # define PHI 1.61803398875
 
 #define RULE(mask, n) (((mask) >> (n)) & 1)
@@ -40,6 +41,38 @@ static inline int wrap_index(int i, int max) {
 	return (i + max) % max;
 }
 
+typedef struct s_control
+{
+	t_img		*color_con;
+	t_img		*r;
+	t_img		*g;
+	t_img		*b;
+	t_img		*ct;
+
+	int			m_height;//menu
+	int			m_width;
+
+	int			k_width;//knobs
+	int			k_height;
+
+	int			ct_height;//color track
+	int			ct_width;
+
+	int 		col_num;//4 cols
+
+	bool		dragging;
+	int			start_x;
+	int			start_y;
+	int			knob;
+
+	bool		pressed;
+	int			press_xs;
+	int			press_ys;
+	int			press_width;
+	int			press_height;
+
+
+} t_control;
 
 typedef struct s_color_vars
 {
@@ -93,6 +126,10 @@ typedef struct s_game
 	uint32_t	rules_mask;
 	Xoro128		rng;
 	t_data		*data;
+	t_control 	*con;//in prog
+	bool		con_open;
+	bool		on_con;
+	t_3color	curr_col;
 //---included in god data----
 	bool		god;
 	double		move_x;
@@ -212,6 +249,24 @@ png_text	*build_chaos_text(t_game *r);
 char		*serialize_game_data(t_game *game);
 char		*read_png_text_metadata(const char *filename);
 void		deserialize_game_data(t_game *r, const char *data);
+
+/***GUI CONTROLS***/
+void			free_controls(void *con, t_control *controls);
+t_control		*make_controls(void *m_con);
+void			set_controls(t_game *r);
+void			controls(t_game *r);
+int				con_press(int x, int y, t_game *game, t_control *con);
+int				mouse_move(int x, int y, t_game *game);
+int				mouse_release(int button, int x, int y, t_game *game);
+unsigned int	pixel_color_get3(int x, int y, t_img *img);
+void			set_color_vals(void *mlx_con, void *mlx_win, t_game *game);
+
+//void			reset_track(t_img *img, t_control control, int move_y);
+
+
+
+
+
 
 /***CLEAN***/
 void		clear_all(t_game *r);

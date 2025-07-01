@@ -91,16 +91,11 @@ static inline void	end_intermed(t_game *r)
 
 void	intermed(t_game *r)
 {
-	long	start;
-	long	end;
-	int		**vertices;
+	long		start;
+	long		end;
+	int			**vertices;
 	double		x;
 	double		y;
-
-
-	
-
-
 	uint64_t	glob_seed;
 
 	glob_seed = 0xFABDECAF;//secret number fAb DeCaF
@@ -111,7 +106,15 @@ void	intermed(t_game *r)
 	reset_img_memory(r);
 	run_game(r, vertices, x, y);
 	end_intermed(r);
-	mlx_put_image_to_window(r->mlx_connect, r->mlx_win, r->img.img_ptr, 0, 0);
+
+	if (r->con_open)
+	{
+		r->con_open = false;
+		controls(r);
+	}
+	else
+		mlx_put_image_to_window(r->mlx_connect, r->mlx_win, r->img.img_ptr, 0, 0);
+
 	end = get_time();
 	print_time(start, end, "RENDER TIME: %f seconds\n");
 }

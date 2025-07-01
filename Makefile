@@ -34,7 +34,11 @@ SRCS := ./src/main.c \
 ./src/set_godmode_data.c \
 ./src/get_god_data.c \
 ./src/resize_window.c \
-./src/time_utils.c
+./src/time_utils.c \
+./src/controls.c \
+./src/set_con.c \
+./src/events_gui.c \
+./src/events_mouse_move.c 
 
   
 CFLAGS := -Wall -Wextra -Werror -I$(INC_DIR) -Ofast -march=native -Wno-unused-result

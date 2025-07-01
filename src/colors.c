@@ -41,8 +41,7 @@ unsigned int	color_depth_option(t_game *r, int v, double x, double y, int **vert
 		color = calc_color_4(distance, r->max_distance, &r->colors);
 	else
 		color = calc_color_4(distance ,  r->max_distance * 1.3 , &r->colors);// dist form verts, max radius, then zoom, was 1.3 * max_d
-							//in place of max dist param...r->r * r->zoom
-	//color = calc_color_4(distance, r->max_distance, &r->colors);// consider varying this...
+	//color = calc_color_4(distance, r->r * r->zoom, &r->colors);// dist form verts, max radius, then zoom, this is the correct inversion. sometimes above looks better.
 	
 	return (color);
 }

@@ -12,13 +12,17 @@
 
 #include "chaos.h"
 
+
 void	zoom_iters_mouse(int button, t_game *r)
 {
+	double rad_times_zoom;
+
 	if (button == MOUSE_FORWARD)
 		r->zoom *= 1.1;
 	else if (button == MOUSE_BACK)
 		r->zoom /= 1.1;
-	r->iters = (4 + r->iters_change) * r->dist_ratio * r->dist_ratio * (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);
+	rad_times_zoom = r->r * r->zoom;
+	r->iters = (4 + r->iters_change) * r->dist_ratio * r->dist_ratio * rad_times_zoom * rad_times_zoom * sqrt(3);
 }
 //for center on one axis, move_axis = 0, and not other
 static int	mouse_handler_2(int button, int x, int y, t_game *r)
@@ -37,49 +41,57 @@ static int	mouse_handler_2(int button, int x, int y, t_game *r)
 			cen_y = r->height / 2.0;
 			old_zoom = r->zoom;
 			zoom_iters_mouse(button, r);			
-			//travel_zoom, translate, zoom
-			/* r->move_x = (r->width / 2 - x) / r->zoom + r->move_x;
-			r->move_y = (y - r->height / 2) / r->zoom + r->move_y; */
-			//try for mouse zoom tran, zoom, tran back
+			
+			//For mouse zoom tran pnt to center, zoom, tran back
 			//original form for clarity
 			/* r->move_x = (cen_x - x) / old_zoom - (cen_x - x) / r->zoom + r->move_x;
 			r->move_y = (y - cen_y) / old_zoom - (y - cen_y) / r->zoom + r->move_y; */
 
-			//opti
-			r->move_x += (cen_x - x) * (r->zoom - old_zoom) / (old_zoom * r->zoom);
-			r->move_y += (y - cen_y) * (r->zoom - old_zoom) / (old_zoom * r->zoom);
+			//opti, pack action into x and y to be added
+			double factor = (r->zoom - old_zoom) / (old_zoom * r->zoom);
+			r->move_x += (cen_x - x) * factor;
+			r->move_y += (y - cen_y) * factor;
 		}
 	}
+	intermed(r);
 	return (0);
+}
+
+void	handle_left_click(int x, int y, t_game *r, t_control con)
+{
+	if (r->con_open && x < con.m_width && y < con.m_height)
+		con_press(x, y, r, r->con);
+	else
+	{
+		//perform normal left click
+		if (!r->layer)
+			r->rotate -= M_PI / ((r->sides * 6) * r->zoom);
+		else
+			r->move_x = 0;
+		intermed(r);
+	}
 }
 
 int	mouse_handler(int button, int x, int y, t_game *r)
 {
 	//printf("%d\n", button);
-	if (r->supersample)
+	if (r->supersample && button != 1)
 	{
 		x *= r->s_kernel;
 		y *= r->s_kernel;
 	}
-	if (!r->layer)
+	if (button == 1)//
+		handle_left_click(x, y, r, *r->con);//
+	else if (button == 3)//
 	{
-		if (button == 1)
-			r->rotate -= M_PI / ((r->sides * 6) * r->zoom);
-		else if (button == 3)
+		if (!r->layer)
 			r->rotate += M_PI / ((r->sides * 6) * r->zoom);
 		else
-			mouse_handler_2(button, x, y, r);
+			r->move_y = 0;
+		intermed(r);	
 	}
 	else
-	{
-		if (button == 1)
-			r->move_x = 0;
-		else if (button == 3)
-			r->move_y = 0;
-		else
-			mouse_handler_2(button, x, y, r);
-	}
-	intermed(r);
+		mouse_handler_2(button, x, y, r);
 	return (0);
 }
 

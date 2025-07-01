@@ -46,6 +46,8 @@
     -----DISINFO_2 ==== DISINFORM RECENT VERTS 2 BACK*/
 void	clear_all(t_game *r)
 {
+	if (r->con)
+		free_controls(r->mlx_connect, r->con);
 	if (r->w_colors)
 		free(r->w_colors);
 	if (r->pixels_xl)
@@ -65,6 +67,8 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 	mlx_hook(r->mlx_win, DestroyNotify, StructureNotifyMask, close_screen, r);
 	mlx_hook(r->mlx_win, ButtonPress, ButtonPressMask, mouse_handler, r);
 	
+	mlx_hook(r->mlx_win, MotionNotify, PointerMotionMask, mouse_move, r);
+	mlx_hook(r->mlx_win, ButtonRelease, ButtonReleaseMask, mouse_release, r);
 	//back compat
 	//r->colors = ORIGINAL;
 /* 	r->color_depth = 0;
@@ -107,12 +111,16 @@ void	init_rv(t_game *r)
 
 void	info_init(t_game *r)
 {
-	
+	r->con_open = false;
+	r->on_con = false;
+	r->con->knob = 0;
+
 	//r->iters_change = 0;//for back compat
+	r->win_change_x = 0;
+	r->win_change_y = 0;
 	if (!r->god)
 	{
 		r->iters_change = 0;//just added can use in adjust window to simplify current... is num times iters key change ,1, 2 etc
-		
 		r->rotate = 0;
 		r->ratio_start = 0.5;
 		r->move_x = 0.0;
@@ -140,12 +148,12 @@ void	r_init(t_game *r)
 		r->rules[i] = 0;
 	r->disinfo_1 = 0;
 	r->disinfo_2 = 0;
-	r->win_change_x = 0;
-	r->win_change_y = 0;
+	
 }
 
 void	game_init(t_game *r)
 {
+	r->con = NULL;
 	r->mlx_connect = mlx_init();
 	if (r->mlx_connect == NULL)
 		exit(EXIT_FAILURE);
@@ -160,5 +168,8 @@ void	game_init(t_game *r)
 	if (new_img_init(r->mlx_connect, &r->img, r->width, r->height) == -1)
 		clear_all(r);
 	events_init(r);
+	r->con = make_controls(r->mlx_connect);
+	if (!r->con)
+		clear_all(r);
 	info_init(r);
 }

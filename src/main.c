@@ -40,13 +40,26 @@ static void	init_god2(t_game *r, char **av)
 	god = read_png_text_metadata(av[3]);
 	deserialize_game_data(r, god);
 	free(god);
-	double max_change = r->max_distance - sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
+	
+	//stuff for god2 still need max dist
+	
+	double old_hyp = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
+	double max_change = r->max_distance - old_hyp;
+	
 	r->width = ft_atoi(av[1]);
 	r->height = ft_atoi(av[2]);
-	r->max_distance = sqrt(((r->width * r->width) + (r->height * r->height)) / 4) + max_change;
-	//r->iters = round(4 * ((double)r->iters / (((double)r->r * r->zoom) * ((double)r->r * r->zoom) * sqrt(3)) - 1));
-	//r->r = (r->height / 2 - r->height / 10);
-	//r->iters = round(((double)r->r * r->zoom) * ((double)r->r * r->zoom) * sqrt(3) * (1 + (double)r->iters / 4));
+	
+	double new_hyp = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
+	r->max_distance =  (new_hyp / old_hyp) * (r->max_distance + max_change);
+
+
+	double incs = round(4 * ((double)r->iters / (((double)r->r * r->zoom) * ((double)r->r * r->zoom) * sqrt(3)) - 1));
+	
+	r->r = (r->height / 2 - r->height / 10);
+	r->iters = round(((double)r->r * r->zoom) * ((double)r->r * r->zoom) * sqrt(3) * (1 + incs / 4));
+	if (r->supersample)
+		r->iters *= r->s_kernel * r->s_kernel;
+
 	//r->max_distance = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
 
 //NEEDS iter adjust, poss color at size up open.
