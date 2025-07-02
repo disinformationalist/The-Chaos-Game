@@ -18,6 +18,8 @@ void	free_controls(void *con, t_control *controls)
 		destroy_img(controls->g, con);
 	if (controls->b)
 		destroy_img(controls->b, con);
+	if (controls->s)
+		destroy_img(controls->s, con);
 	if (controls->ct)
 		destroy_img(controls->ct, con);
 	free(controls);
@@ -56,6 +58,12 @@ t_control	*make_controls(void *m_con)
 	"gui_imgs/blue.png", &new->k_width, &new->k_height);
 	if (!new->b)
 		return (NULL);
+
+	new->s = import_png(m_con, \
+	"gui_imgs/silver.png", &new->k_width, &new->k_height);
+	if (!new->s)
+		return (NULL);
+		
 	new->ct = import_png(m_con, \
 	"gui_imgs/col_track.png", &new->ct_width, &new->ct_height);
 	if (!new->ct)

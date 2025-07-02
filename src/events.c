@@ -160,7 +160,7 @@ static int	key_handler_2(int keysym, t_game *r)
 	else if (keysym == LESS_THAN)
 	{
 		r->color_depth++;
-		if (r->color_depth > 3)//
+		if (r->color_depth > 3)
 			r->color_depth = 0;
 	}
 	else if (keysym == QUES)
@@ -205,6 +205,7 @@ static int	key_handler_2layer(int keysym, t_game *r)//need ot make new iters adj
 			if (r->s_kernel > 31)
 				r->s_kernel = 31;
 		}
+		printf("Supersample Level: %d\n", r->s_kernel);
 	}
 	else if (keysym == PAD_MINUS)
 	{
@@ -222,6 +223,7 @@ static int	key_handler_2layer(int keysym, t_game *r)//need ot make new iters adj
 			if (r->s_kernel < 3)
 				r->s_kernel = 3;
 		}
+		printf("Supersample Level: %d\n", r->s_kernel);
 	}
 	else if (keysym == ALT)//curved
 		r->curved = !r->curved;

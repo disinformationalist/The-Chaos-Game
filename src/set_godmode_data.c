@@ -64,6 +64,9 @@ char *serialize_game_data(t_game *r)
     offset += snprintf(buffer + offset, 1024 - offset, "col_shift_y=%d;", r->col_shift_y);
     offset += snprintf(buffer + offset, 1024 - offset, "iters_change=%d;", r->iters_change);
 
+    offset += snprintf(buffer + offset, 1024 - offset, "background=%x;", r->colors.background);
+
+
 
 
 

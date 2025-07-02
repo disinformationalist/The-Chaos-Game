@@ -34,6 +34,8 @@
 
 
 # define PHI 1.61803398875
+# define TWO_PI 6.283185
+
 
 #define RULE(mask, n) (((mask) >> (n)) & 1)
 
@@ -47,6 +49,7 @@ typedef struct s_control
 	t_img		*r;
 	t_img		*g;
 	t_img		*b;
+	t_img		*s;
 	t_img		*ct;
 
 	int			m_height;//menu
@@ -71,6 +74,13 @@ typedef struct s_control
 	int			press_width;
 	int			press_height;
 
+	int			iters;
+	int			iters_i;
+	int			iters_j;
+
+	double		max_d;
+	double		base_d;
+	double		start_angle;//iter
 
 } t_control;
 
@@ -130,6 +140,7 @@ typedef struct s_game
 	bool		con_open;
 	bool		on_con;
 	t_3color	curr_col;
+
 //---included in god data----
 	bool		god;
 	double		move_x;

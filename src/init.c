@@ -76,7 +76,6 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 	r->col_shift_x = 0;
 	r->col_shift_y = 0;
 	r->color_rot = 0; */
-	
 	if (!r->god)//must place these outside of this for backward compat.
 	{
 		r->colors = ORIGINAL;
@@ -86,7 +85,6 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 		r->col_shift_y = 0;
 		r->color_rot = 0;
 	}
-	
 	if (!r->god)
 	{
 		r->mouse_zoom = 0;
@@ -96,6 +94,7 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 		r->jump_to_center = 0;
 		r->mode = 1;
 		r->function_id = 0;
+		r->colors.background= 0x000000;
 	}
 	r->resize = false;
 }
@@ -114,7 +113,7 @@ void	info_init(t_game *r)
 	r->con_open = false;
 	r->on_con = false;
 	r->con->knob = 0;
-
+	r->con->base_d = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
 	//r->iters_change = 0;//for back compat
 	r->win_change_x = 0;
 	r->win_change_y = 0;
@@ -132,9 +131,10 @@ void	info_init(t_game *r)
 		r->r = r->height / 2 - r->height / 10;
 		//if (!r->supersample)
 		r->iters = (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);//may adjust but seems good for now..iters = area of hexagon.
-		r->max_distance = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);//changed from width/2 to dist to corner.
+		r->max_distance = r->con->base_d;//changed from width/2 to dist to corner.
 	}
 	r->rv_len = 3;//change here and in header struct
+	r->con->max_d = r->max_distance;
 	init_rv(r);
 }
 

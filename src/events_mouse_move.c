@@ -1,46 +1,21 @@
 #include "chaos.h"
 
-/* void	reset_track(t_img *img, t_control control, int move_y)
+double	get_delta_angle(double y, double x, double *start)
 {
-	int				j;
-	int				i;
-	unsigned int	color;
+	double	angle;
+	double	delta_angle;
 
-	j = -1;
-	while (++j < control.ct_height)
-	{
-		i = -1;
-		while (++i < control.ct_width)
-		{
-			color = pixel_color_get3(i, j , control.ct);
-				my_pixel_put(9 + i, move_y + j, img, color);
-		}
-	}
-} */
-
-
-/* void	set_rknob(t_img *img, t_control control, t_3color color)
-{
-	int				i;
-	int				j;
-	unsigned int	k_color;
-	int				x_startr;
-	int				y_startr;
-
-	x_startr = 14 + color.r;
-	y_startr = 103;
-	j = -1;
-	while (++j < 17)
-	{
-		i = -1;
-		while (++i < 17)
-		{
-			k_color = pixel_color_get3(i, j , control.r);
-			if (k_color != 0xFF202020)
-				my_pixel_put(x_startr + i, y_startr + j, img, k_color);
-		}
-	}
-} */
+	angle = atan2(y, x);
+	
+	(void)start, (void)angle;
+	delta_angle = angle - *start;
+	if (delta_angle > M_PI)
+		delta_angle -= TWO_PI;
+    else if (delta_angle < -M_PI)
+		delta_angle += TWO_PI;
+	//*start = angle;
+	return (delta_angle);
+}
 
 
 void	set_color_chan(t_colors *colors, t_3color *curr_col, int num_col, int chan, int new_val)
@@ -57,8 +32,10 @@ void	set_color_chan(t_colors *colors, t_3color *curr_col, int num_col, int chan,
 		colors->color_2 = color_out;
 	else if (num_col == 3)
 		colors->color_3 = color_out;
-	else //(num_col == 4)
+	else if (num_col == 4)
 		colors->color_4 = color_out;
+	else //(num_col == 5)
+		colors->background = color_out;
 }
 
 int	mouse_release(int button, int x, int y, t_game *game)
@@ -86,26 +63,29 @@ int	mouse_release(int button, int x, int y, t_game *game)
 	return (0);
 }
 
+double get_knob_pos(double max_d, double base_d)
+{
+	return 127.0 + ((max_d / base_d - 1.0) / 6.0) * 144.0;
+}
+
+double get_max_d(double new_val, double base_d)
+{
+	return ((new_val / 144) * 6 + 1) * base_d;
+}
 
 int mouse_move(int x, int y, t_game *game)
 {
 	double			delta_x;
-//	double			delta_y;
-//	t_vec3			move;
 	t_3color		color;
 	int				current_knob_pos = 0;
 	int 			new_knob_pos;
 	double			new_val;
 	int				knob;
-/* 	double			angle;
-	double			delta_angle; */
+	double			delta_angle;
 	void			*connect = game->mlx_connect;
 	void			*win = game->mlx_win;
 	t_control		*con = game->con;
-	//t_control		cont = *trace->obj_control;
-	//t_img			*img = con->color_con;
-	
-	(void)y;
+
 	knob = con->knob;
 	if (con->dragging && game->con_open && knob != -1)
 	{	
@@ -121,6 +101,23 @@ int mouse_move(int x, int y, t_game *game)
      		new_val = new_knob_pos - 16;
 			 //change color with ft here...
 			 set_color_chan(&game->colors, &color, con->col_num, con->knob, new_val);
+		}
+		if (knob == 3)//max_d
+		{
+			current_knob_pos = get_knob_pos(con->max_d, con->base_d);
+			new_knob_pos = fmax(127, fmin(270, current_knob_pos + delta_x));
+     		new_val = new_knob_pos - 127;
+			double scaled_max_d = get_max_d(new_val, con->base_d);
+			if (game->supersample)
+				game->max_distance = scaled_max_d * game->s_kernel;
+			else	
+				game->max_distance = scaled_max_d;//((new_val / 144) * 6 + 1) * con->base_d;
+			//con->max_d = game->max_distance;
+		}
+		if (knob == 4)//iter
+		{
+			delta_angle = get_delta_angle(432 - y, x - 200, &con->start_angle);//424 + 8 -y, x - 8 - 192, min the 8s for the rad of knob
+			game->iters += delta_angle * (168354.0 / M_PI);
 		}
 		set_controls(game);
 		mlx_put_image_to_window(connect, win, game->img.img_ptr, 0, 0);

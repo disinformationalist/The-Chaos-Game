@@ -101,12 +101,15 @@ typedef struct s_3color
 # define BRONZE 0xCD7F32
 # define GUNMETAL_2 0x2C3539
 
+# define BLACK1 0x000000
+
 typedef struct s_colors
 {
-	int color_1;
-	int color_2;
-	int color_3;
-	int color_4;
+	int				color_1;
+	int				color_2;
+	int				color_3;
+	int				color_4;
+	unsigned int	background;
 }	t_colors;
 
 extern const t_colors FIRE;
@@ -126,14 +129,3 @@ extern const t_colors GUN;
 
 
 #endif
-//SOME TO TRY FROM
-/* 0xFF6347; // Tomato Red
-		0x4682B4; // Steel Blue nice bluue
-		0xFFD700; // Gold
-		0x8A2BE2; // Blue Violet nice purple */
-
-		
-		/* 0xFFD700;
-		0x6A5ACD;
-		0x556B2F;
-		0xB7410E; */
