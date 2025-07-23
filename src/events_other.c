@@ -29,19 +29,19 @@ const t_colors GUN = {STEEL_GRAY, SILVER, BRONZE, GUNMETAL_2, BLACK1};
 
 static int	key_handler_other_4layer(int keysym, t_game *r)
 {
-	if (keysym == Y)
+	if (keysym == KEY_Y)
 		r->colors = ETERNAL_SPRING;
-	else if (keysym == X)
+	else if (keysym == KEY_X)
 		r->colors = HIGH_SUMMER;
-	else if (keysym == C)
+	else if (keysym == KEY_C)
 		r->colors = WAXING_AUTUMN;
-	else if (keysym == V)
+	else if (keysym == KEY_V)
 		r->colors = DEEP_WINTER;
-	else if (keysym == _B)//UN
+	else if (keysym == KEY_B)//UN
 		r->colors = UNNAMED_2;
-	else if (keysym == N)//UN
+	else if (keysym == KEY_N)//UN
 		r->colors = UNNAMED_3;
-	else if (keysym == M)
+	else if (keysym == KEY_M)
 		r->colors = GUN;
 	else
 		supersample_handler(keysym, r);
@@ -50,19 +50,19 @@ static int	key_handler_other_4layer(int keysym, t_game *r)
 
 static int	key_handler_other_4(int keysym, t_game *r)
 {
-	if (keysym == Y)
+	if (keysym == KEY_Y)
 		r->colors = FIRE;
-	else if (keysym == X)
+	else if (keysym == KEY_X)
 		r->colors = ICE;
-	else if (keysym == C)
+	else if (keysym == KEY_C)
 		r->colors = CANDY;
-	else if (keysym == V)
+	else if (keysym == KEY_V)
 		r->colors = SLIME;
-	else if (keysym == _B)//UNNAMED
+	else if (keysym == KEY_B)//UNNAMED
 		r->colors = UNNAMED_1;
-	else if (keysym == N)
+	else if (keysym == KEY_N)
 		r->colors = ORIGINAL;
-	else if (keysym == M)
+	else if (keysym == KEY_M)
 		r->colors = NEBULA;
 	else
 		supersample_handler(keysym, r);
@@ -72,19 +72,9 @@ static int	key_handler_other_4(int keysym, t_game *r)
 static int	key_handler_other_3(int keysym, t_game *r)
 {
 	if (keysym == COMMA)
-	{
-		if (r->supersample)//make these height and width based...
-			r->max_distance += 100 * r->s_kernel;
-		else
-			r->max_distance += 100;
-	}
+			r->max_distance += r->height / 10;
 	else if (keysym == PERIOD)
-	{
-		if (r->supersample)
-			r->max_distance -= 100 * r->s_kernel;
-		else
-			r->max_distance -= 100;
-	}
+			r->max_distance -= r->height / 10;
 	else if (keysym == PAD_3)//need to make special handling for monster
 	{
 		r->dist_ratio = 2;
@@ -100,19 +90,9 @@ static int	key_handler_other_3(int keysym, t_game *r)
 static int	key_handler_other_3layer(int keysym, t_game *r)//avail 2nd layer
 {
 	if (keysym == COMMA)
-	{
-		if (r->supersample)//make these height and width based...
-			r->max_distance += 100 * r->s_kernel;
-		else
-			r->max_distance += 100;
-	}
+			r->max_distance += r->height / 10;
 	else if (keysym == PERIOD)
-	{
-		if (r->supersample)
-			r->max_distance -= 100 * r->s_kernel;
-		else
-			r->max_distance -= 100;
-	}
+			r->max_distance -= r->height / 10;
 	else if (keysym == PAD_3)
 		r->dist_ratio = 2;
 	else
@@ -122,15 +102,15 @@ static int	key_handler_other_3layer(int keysym, t_game *r)//avail 2nd layer
 
 static int	key_handler_other_2(int keysym, t_game *r)
 {
-	if (keysym == F5)
+	if (keysym == XK_F5)
 		r->sides = 5;
-	else if (keysym == F6)
+	else if (keysym == XK_F6)
 		r->sides = 6;
-	else if (keysym == F7)
+	else if (keysym == XK_F7)
 		r->sides = 7;
-	else if (keysym == F12)
+	else if (keysym == XK_F12)
 		r->sides = 12;
-	else if (keysym == STRG)//lft strg here...
+	else if (keysym == XK_Control_L)//lft strg here...
 	{
 		r_init(r);
 		info_init(r);
@@ -142,17 +122,17 @@ static int	key_handler_other_2(int keysym, t_game *r)
 
 static int	key_handler_other_2layer(int keysym, t_game *r)//avail 2nd layer
 {
-	if (keysym == F4)
+	if (keysym == XK_F4)
 		r->sides = 4;
-	else if (keysym == F5)
+	else if (keysym == XK_F5)
 		r->sides = 5;
-	else if (keysym == F6)
+	else if (keysym == XK_F6)
 		r->sides = 6;
-	else if (keysym == F7)
+	else if (keysym == XK_F7)
 		r->sides = 7;
-	else if (keysym == F12)
+	else if (keysym == XK_F12)
 		r->sides = 12;
-	else if (keysym == STRG)//lft strg here...
+	else if (keysym == XK_Control_L)
 	{
 		r_init(r);
 		info_init(r);
@@ -190,7 +170,7 @@ int	key_handler_otherlayer(int keysym, t_game *r)
 		r->col_shift_x = 0;
 		r->col_shift_y = 0;
 	}
-	else if (keysym == RGHT_STRG)
+	else if (keysym == XK_Control_R)
 		r->color_rot += 7;
 	else
 		key_handler_other_2layer(keysym, r);

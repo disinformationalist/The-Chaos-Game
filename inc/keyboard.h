@@ -63,37 +63,37 @@
 # define N_0 48
 
 /****LETTERS****/
-# define Q 113
-# define W 119
-# define E 101
-# define _R 114//
-# define T 116
-# define Z 121 //home
+# define KEY_Q 113
+# define KEY_W 119
+# define KEY_E 101
+# define KEY_R 114//
+# define KEY_T 116
+# define KEY_Z 121 //home
 //# define Z 122 //school
-# define U 117
-# define I 105
-# define O 111
-# define P 112
-# define Ü 91 // ADD TO PRINT BOARD
-# define A 97
-# define S 115
-# define D 100
-# define F 102
-# define _G 103//
-# define H 104
-# define J 106
-# define K 107
-# define L 108
-# define Ö 59
-# define Ä 39
-# define Y 122//home
+# define KEY_U 117
+# define KEY_I 105
+# define KEY_O 111
+# define KEY_P 112
+# define KEY_Ü 91 // ADD TO PRINT BOARD
+# define KEY_A 97
+# define KEY_S 115
+# define KEY_D 100
+# define KEY_F 102
+# define KEY_G 103//
+# define KEY_H 104
+# define KEY_J 106
+# define KEY_K 107
+# define KEY_L 108
+# define KEY_Ö 59
+# define KEY_Ä 39
+# define KEY_Y 122//home
 //# define Y 121//school
-# define X 120
-# define C 99
-# define V 118
-# define _B 98//
-# define N 110
-# define M 109
+# define KEY_X 120
+# define KEY_C 99
+# define KEY_V 118
+# define KEY_B 98//
+# define KEY_N 110
+# define KEY_M 109
 
 /****OTHER****/
 # define ESC 65307

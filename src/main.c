@@ -41,16 +41,26 @@ static void	init_god2(t_game *r, char **av)
 	deserialize_game_data(r, god);
 	free(god);
 	
+	//pre
 	double old_hyp = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
-	//double max_change = r->max_distance - old_hyp;
-	
+	r->col_shift_x /= (int)((double)r->height / 8);
+	r->col_shift_y /= (int)((double)r->height / 8);
+	r->move_x *= (r->zoom * 15) / (double)r->width;
+	r->move_y *= (r->zoom * 15) / (double)r->height;
+	//change dim
 	r->width = ft_atoi(av[1]);
 	r->height = ft_atoi(av[2]);
 	
+	//post
 	double new_hyp = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
-	r->max_distance = (new_hyp / old_hyp) * (r->max_distance);// + max_change);
+	r->max_distance = (new_hyp / old_hyp) * (r->max_distance);
+	r->start_maxd = (new_hyp / old_hyp) * r->start_maxd;
 
 
+	r->col_shift_x *= (int)((double)r->height / 8);
+	r->col_shift_y *= (int)((double)r->height / 8);
+	r->move_x *= (double)(r->width) / (15 * r->zoom);
+	r->move_y *= (double)(r->height) / (15 * r->zoom);
 	double incs = round(4 * ((double)r->iters / (((double)r->r * r->zoom) * ((double)r->r * r->zoom) * sqrt(3)) - 1));
 	
 	r->r = (r->height / 2 - r->height / 10);

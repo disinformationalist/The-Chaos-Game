@@ -38,7 +38,8 @@ SRCS := ./src/main.c \
 ./src/controls.c \
 ./src/set_con.c \
 ./src/events_gui.c \
-./src/events_mouse_move.c 
+./src/events_mouse_move.c \
+./src/cmyk.c
 
   
 CFLAGS := -Wall -Wextra -Werror -I$(INC_DIR) -Ofast -march=native -Wno-unused-result
@@ -67,7 +68,7 @@ all: $(NAME)
 MLX_PATH := ./minilibx-linux
 
 $(NAME): build_mlx $(OBS)
-	$(CC) $(CFLAGS) $(OBS) -lm -Limage_processing -limage_processing -Lminilibx-linux -lmlx_Linux -lX11 -lXext -o $(NAME) -lpng
+	$(CC) $(CFLAGS) $(OBS) -lm -Limage_processing -limage_processing -Lminilibx-linux -lmlx_Linux -lX11 -lXext -o $(NAME) -lpng -llcms2
 	cp $(NAME) ../$(NAME)
 	$(call print_colored, "[SUCCESS]", "./$(NAME)", "Ready")
 

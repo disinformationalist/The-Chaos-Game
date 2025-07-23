@@ -27,6 +27,24 @@ Command line input: exiftool image_1.png */
 	png_set_text(png_ptr, info, text, 1);
 } */
 
+//gamma correct for srgb
+
+static inline uint8_t to_srgb(uint8_t linear_val)
+{
+	float lin = linear_val / 255.0f;
+	float srgb;
+
+	if (lin <= 0.0031308f)
+		srgb = 12.92f * lin;
+	else
+		srgb = 1.055f * powf(lin, 1.0f / 2.4f) - 0.055f;
+
+	int corrected = (int)(srgb * 255.0f + 0.5f);
+	if (corrected < 0) corrected = 0;
+	if (corrected > 255) corrected = 255;
+	return (uint8_t)corrected;
+}
+
 int	set_png_pixels(t_png_io *png_img, t_img *img, int height, int width)
 {
 	png_byte	*row;
@@ -50,7 +68,13 @@ int	set_png_pixels(t_png_io *png_img, t_img *img, int height, int width)
 			*row++ = png_img->temp_pixel.red;
 			*row++ = png_img->temp_pixel.green;
 			*row++ = png_img->temp_pixel.blue;
-			*row++ = 255;
+			//*row++ = 255;//for when alpha in use
+
+			//the correction makes to bright leave out and just apply tag after ihdr as is.
+			/* *row++ = to_srgb(png_img->temp_pixel.red);
+			*row++ = to_srgb(png_img->temp_pixel.green);
+			*row++ = to_srgb(png_img->temp_pixel.blue);
+			*row++ = 255; */
 		}
 	}
 	return (0);
@@ -119,9 +143,20 @@ int	export_png(const char *filename, t_img *img, int width, int height, png_text
 	init_vars(png_img);
 	if (init_png_structs(png_img, filename) == -1)
 		return (-1);
-	png_set_IHDR(png_img->png_ptr, png_img->info, width, height, \
+	/* png_set_IHDR(png_img->png_ptr, png_img->info, width, height, \ //with alpha
 	png_img->depth, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE, \
+	PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT); */
+	png_set_IHDR(png_img->png_ptr, png_img->info, width, height, \
+	png_img->depth, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, \
 	PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+	//if (width * height > 36000000)
+	//png_set_filter(png_img->png_ptr, 0, PNG_FILTER_PAETH); // good for posters
+	//png_set_compression_level(png_img->png_ptr, 9);//adding for smaller large files
+
+
+	png_set_sRGB(png_img->png_ptr, png_img->info, PNG_sRGB_INTENT_PERCEPTUAL);
+
 	png_img->row_pointers = png_malloc(png_img->png_ptr, height \
 	* sizeof(png_byte *));
 	if (!png_img->row_pointers)

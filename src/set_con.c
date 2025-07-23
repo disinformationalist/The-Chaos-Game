@@ -189,6 +189,8 @@ void	set_controls(t_game *r)
 
 void	controls(t_game *r)
 {
+	if (r->height_orig < 570 || r->width_orig < 400)
+		return ;
 	if (!r->con_open)
 		set_controls(r);
 	r->con_open = !r->con_open;

@@ -120,15 +120,10 @@ int con_press(int x, int y, t_game *game, t_control *con)
 	}
 	else
 		check_knobs(x, y, game);
+	if (game->height_orig < 570 || game->width_orig < 400)
+		return 0;
 	set_controls(game);
 	mlx_put_image_to_window(connect, win, game->img.img_ptr, 0, 0);
 	set_color_vals(connect, win, game);
-	
-	/* //TODO Depth up down
-	else if ((x >= 172 && x <= 274) && (y > 390 && y <= 413)) 
-	{
-		toggle_shadow(trace, trace->on);
-		update_no_low(trace->mlx_connect, trace->mlx_win, trace);
-	} */
 	return (0);
 }

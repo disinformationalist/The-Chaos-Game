@@ -104,6 +104,7 @@ void	set_supersampler_off(t_game *r)
 	r->r = r->height / 2 - r->height / 10;
 	
 	r->max_distance /= r->s_kernel;
+	r->start_maxd /= r->s_kernel;
 	r->move_x /= r->s_kernel;
 	r->move_y /= r->s_kernel;
 }
@@ -117,6 +118,7 @@ void	set_supersampler_on(t_game *r)
 	r->r = r->height / 2 - r->height / 10;
 	
 	r->max_distance *= r->s_kernel;
+	r->start_maxd *= r->s_kernel;
 	r->move_x *= r->s_kernel;
 	r->move_y *= r->s_kernel;
 }

@@ -41,23 +41,14 @@ void	set_color_chan(t_colors *colors, t_3color *curr_col, int num_col, int chan,
 int	mouse_release(int button, int x, int y, t_game *game)
 {
 	t_control *con;
+
 	(void)x;
 	(void)y;
-
 	con = game->con;
 	if (button == 1 && con->dragging)
 	{
 		con->dragging = false;
 		con->knob = -1;
-		/* if (trace->low_flag)
-			trace->low_inc = trace->m_lowinc;
-		else
-			trace->low_res = false;
-		if (trace->menu_open && !trace->stash)
-			reset_con(trace);
-		else if (trace->menu_open)
-			reset_con_non(trace);
-		else if (!trace->stash) */
 		intermed(game);
 	}
 	return (0);
@@ -111,14 +102,15 @@ int mouse_move(int x, int y, t_game *game)
 			if (game->supersample)
 				game->max_distance = scaled_max_d * game->s_kernel;
 			else	
-				game->max_distance = scaled_max_d;//((new_val / 144) * 6 + 1) * con->base_d;
-			//con->max_d = game->max_distance;
+				game->max_distance = scaled_max_d;
 		}
 		if (knob == 4)//iter
 		{
 			delta_angle = get_delta_angle(432 - y, x - 200, &con->start_angle);//424 + 8 -y, x - 8 - 192, min the 8s for the rad of knob
 			game->iters += delta_angle * (168354.0 / M_PI);
 		}
+		if (game->height_orig < 570 || game->width_orig < 400)
+			return 0;
 		set_controls(game);
 		mlx_put_image_to_window(connect, win, game->img.img_ptr, 0, 0);
 		set_color_vals(connect, win, game);

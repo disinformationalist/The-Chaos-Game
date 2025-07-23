@@ -33,6 +33,7 @@ int	close_screen(t_game *r)
 	if (r->w_colors)
 		free(r->w_colors);
 	mlx_destroy_image(r->mlx_connect, r->img.img_ptr);
+	mlx_destroy_image(r->mlx_connect, r->cmyk.img_ptr);
 	mlx_destroy_window(r->mlx_connect, r->mlx_win);
 	mlx_destroy_display(r->mlx_connect);
 	free(r->mlx_connect);
@@ -51,12 +52,13 @@ static int	key_handler_3(int keysym, t_game *r)
 		r->move_y -= (r->height / (15 * r->zoom));
 	else if (keysym == PLUS) 
 	{
-		r->iters += r->dist_ratio * r->dist_ratio * (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);
+		
+		r->iters += SQ(r->dist_ratio) * SQ(r->r * r->zoom) * sqrt(3);
 		r->iters_change += 1;
 	}
 	else if (keysym == MINUS)
 	{
-		r->iters -= r->dist_ratio * r->dist_ratio * (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);
+		r->iters -= SQ(r->dist_ratio) * SQ(r->r * r->zoom) * sqrt(3);
 		if (r->iters <= 0)
 			r->iters = 0;
 		r->iters_change -= 1;
@@ -70,29 +72,32 @@ static int	key_handler_3(int keysym, t_game *r)
 
 static int	key_handler_3layer(int keysym, t_game *r)
 {
+	double factor = 1.1;
+	int		shift = (int)((double)r->height / 8);
+
 	if (keysym == XK_Up)
-		r->col_shift_y += (r->height / 8);
+		r->col_shift_y += shift;
 	else if (keysym == XK_Down)
-		r->col_shift_y -= (r->height / 8);
+		r->col_shift_y -= shift;
 	else if (keysym == XK_Left)
-		r->col_shift_x += (r->height / 8);
+		r->col_shift_x += shift;
 	else if (keysym == XK_Right)
-		r->col_shift_x -= (r->height / 8);
+		r->col_shift_x -= shift;
 	else if (keysym == PLUS)//maybe adjust these for width
 	{
 		r->resize = true;
-		r->win_change_x += 200;
-		r->win_change_y += 200;
+		r->win_change_x *= factor;
+		r->win_change_y *= factor;
 	}
 	else if (keysym == MINUS)
 	{
 		r->resize = true;
-		r->win_change_x -= 200;
-		r->win_change_y -= 200;
+		r->win_change_x /= factor;
+		r->win_change_y /= factor;
 		if (r->width_orig <= 200 || r->height_orig <= 200)
 		{
-			r->win_change_x = 0;
-			r->win_change_y = 0;
+			r->win_change_x *= factor;
+			r->win_change_y *= factor;
 		}
 	}
 		key_handler_rlayer(keysym, r);
@@ -111,16 +116,24 @@ void adjust_ratio(t_game *r, double new_ratio)
 		r->move_y = 0.0;
 		r->rotate = 0;
 	}
+	double old = r->dist_ratio;// for adjust below
 	r->dist_ratio = new_ratio;
-/* 	if (r->dist_ratio > 1)//not working yet ... almost
-		r->zoom =  (r->dist_ratio - 1) / r->dist_ratio;//geometric series solution.. not quite right though.
-		//r->zoom = 1 / (((1 - r->dist_ratio) / r->dist_ratio) * ((1 - r->dist_ratio) / r->dist_ratio) * sqrt(3) * 3 / 2);//geometric series solution
-		//r->zoom = ((1 - r->dist_ratio) / r->dist_ratio) / ((1 - r->dist_ratio) * r->dist_ratio * r->dist_ratio);//geometric series solution
+	double old_zoom = r->zoom;	
+
+
+	if (old > 1 && old < 2 && old != 1)
+		r->zoom *= r->ratio_change;
+	if (new_ratio == 2)
+		r->ratio_change = 1;
 	else
-		r->zoom = 1; */
+		r->ratio_change = r->dist_ratio / (2 - r->dist_ratio);
+	if (r->dist_ratio > 1 && r->dist_ratio < 2 && old != 1)
+		r->zoom /= r->ratio_change;//(2 - r->dist_ratio) / r->dist_ratio;//geometric series solution correct ( for  between 1 and 2)!
+	r->move_x *= (old_zoom / r->zoom);
+	r->move_y *= (old_zoom / r->zoom);
 	
-	if (new_ratio > 1.0)
-		r->iters = (4 + r->iters_change) * r->dist_ratio * r->dist_ratio * (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);
+	//if (new_ratio > 1.0)
+	r->iters = (4 + r->iters_change) * r->dist_ratio * r->dist_ratio * (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);
 }
 
 static int	key_handler_2(int keysym, t_game *r)
@@ -194,14 +207,14 @@ static int	key_handler_2layer(int keysym, t_game *r)//need ot make new iters adj
 		if (r->supersample)
 		{
 			set_supersampler_off(r);
-			r->s_kernel += 2;
+			r->s_kernel += 1;
 			if (r->s_kernel > 31)
 				r->s_kernel = 31;
 			set_supersampler_on(r);
 		}
 		else
 		{
-			r->s_kernel += 2;
+			r->s_kernel += 1;
 			if (r->s_kernel > 31)
 				r->s_kernel = 31;
 		}
@@ -212,16 +225,16 @@ static int	key_handler_2layer(int keysym, t_game *r)//need ot make new iters adj
 		if (r->supersample)
 		{
 			set_supersampler_off(r);
-			r->s_kernel -= 2;
-			if (r->s_kernel < 3)
-				r->s_kernel = 3;
+			r->s_kernel -= 1;
+			if (r->s_kernel < 2)
+				r->s_kernel = 2;
 			set_supersampler_on(r);
 		}
 		else
 		{
-			r->s_kernel -= 2;
-			if (r->s_kernel < 3)
-				r->s_kernel = 3;
+			r->s_kernel -= 1;
+			if (r->s_kernel < 2)
+				r->s_kernel = 2;
 		}
 		printf("Supersample Level: %d\n", r->s_kernel);
 	}
@@ -363,7 +376,7 @@ int	key_handler(int keysym, t_game *r)//place things not to rerender upon keypre
 		print_board(r);
 	/* else if (keysym == )
 		print_guide(); */
-	else if (keysym == RGHT_STRG && !r->layer)
+	else if (keysym == XK_Control_R && !r->layer)
 		r->mouse_zoom = !r->mouse_zoom;
 	else if (keysym == F3)
 	{
@@ -380,6 +393,17 @@ int	key_handler(int keysym, t_game *r)//place things not to rerender upon keypre
 		}
 		free(name);
 		ft_putstr_color("EXPORT COMPLETE\n", BOLD_BRIGHT_MAGENTA);
+	}
+	else if (keysym == XK_F11)
+	{
+		//swap contents for r->img, r->cmyk;
+		t_img	temp;
+		temp = r->img;
+		r->img = r->cmyk;
+		r->cmyk = temp;
+		if (r->con_open)//TODO add and only if on the page it was opened
+			set_color_vals(r->mlx_connect, r->mlx_win, r);	
+		mlx_put_image_to_window(r->mlx_connect, r->mlx_win, r->img.img_ptr, 0, 0);
 	}
 	else if (r->layer)
 		key_handler_2layer(keysym, r);

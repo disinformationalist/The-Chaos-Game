@@ -31,7 +31,7 @@ void	set_ui_matrix(unsigned int **pixels_xl, int width, int height, unsigned int
 static inline void	intermed_init(t_game *r, int ***vertices, double *x, double *y)//CONSIDER MOVIN POLYGON HERE FOR MULIT THREAD...
 {	
 	if (r->resize)//maybe change to cycle through desired presets.
-		resize_window(r, r->width_orig + r->win_change_x, r->height_orig + r->win_change_y);
+		resize_window(r, (int)((double)r->width_orig * r->win_change_x), (int)((double)r->height_orig * r->win_change_x));
 //------------------	works..
 	if (r->supersample)
 	{
@@ -57,6 +57,7 @@ static inline void	intermed_init(t_game *r, int ***vertices, double *x, double *
 		clear_all(r);
 	*x = r->width / 2 + r->move_x;
 	*y = r->height / 2 - r->move_y; 
+
 	*vertices = NULL;
 }
 
@@ -124,6 +125,8 @@ void	set_background_color(t_game *r, unsigned int background)
 	}
 }
 
+//This is now the main rendering function
+
 void	intermed(t_game *r)
 {
 	long		start;
@@ -138,12 +141,20 @@ void	intermed(t_game *r)
 
 	start = get_time();
 	intermed_init(r, &vertices, &x, &y);
-	set_background_color(r, r->colors.background);//no good with memset for some reason
+
+
+	//convert_colors_to_cmyk_safe(&r->colors);//convert to cmyk safe colors for rendering with, currently turned off for black
+	set_background_color(r, r->colors.background);//no good with memset does gscale
 	//reset_img_memory(r);
 	
 
 	run_game(r, vertices, x, y);
 	end_intermed(r);
+
+
+	// set the cmyk version img to switch between
+	cmyk_softproof_image(r, &r->img, &r->cmyk);
+
 	if (r->con_open)
 	{
 		r->con_open = false;

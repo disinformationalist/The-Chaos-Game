@@ -103,6 +103,8 @@ void	chaos_game(t_game *r, int **vertices, double x, double y)
 
 
 	free_poly(&vertices, r->points - r->jump_to_center);
+	free_poly(&r->vertices2, r->points - r->jump_to_center);
+
 }
 
 void	chaos_game_curved(t_game *r, int **vertices, double x, double y)
@@ -149,5 +151,7 @@ void	chaos_game_curved(t_game *r, int **vertices, double x, double y)
 			color_option(r, v, x, y, vertices);
 	}
 	free_poly(&vertices, r->points - r->jump_to_center);
+	free_poly(&r->vertices2, r->points - r->jump_to_center);
+
 	r->dist_ratio = ratio_end;
 }

@@ -140,6 +140,9 @@ typedef struct s_game
 	bool		con_open;
 	bool		on_con;
 	t_3color	curr_col;
+	double		start_maxd;
+	double		ratio_change;
+	int			**vertices2;
 
 //---included in god data----
 	bool		god;
@@ -175,14 +178,14 @@ typedef struct s_game
 	t_colors	colors;
 
 	int			color_rot;
-	int 		col_shift_y;
+	int 		col_shift_y;//from int
 	int 		col_shift_x;
 	int			iters_change;
 
 //----------not in god----------
 	bool		resize;
-	int			win_change_x;
-	int			win_change_y;
+	double			win_change_x;
+	double			win_change_y;
 	unsigned int **pixels_xl;
 
 	int			*w_colors;
@@ -191,6 +194,8 @@ typedef struct s_game
 	long		i;
 	int			num_rules;
 	t_img		img;
+	t_img		cmyk;
+
 	void		*mlx_connect;
 	void		*mlx_win;
 
@@ -198,7 +203,10 @@ typedef struct s_game
 	int			height_orig;
 }		t_game;
 
-void	print_time(long start, long end, char *msg);
+void		print_time(long start, long end, char *msg);
+void		convert_colors_to_cmyk_safe(t_colors *colors);
+void		cmyk_softproof_image(t_game *r, t_img *src, t_img *dst);
+
 
 /****CHAOS UTILS****/
 

@@ -150,6 +150,7 @@ void	chaos_game_apply_function(t_game *r, int **vertices, double x, double y)//t
 			color_option(r, v, x, y, vertices);
 	}
 	free_poly(&vertices, r->points - r->jump_to_center);
+	free_poly(&r->vertices2, r->points - r->jump_to_center);
 }
 
 /* double	get_ratio(double r_start, double r_end, long iter, long iters)//this is working but not clear how its different? seemss to be none

@@ -10,7 +10,8 @@ int	error_1(t_png_io *png_img, const char *msg)
 
 void	init_vars(t_png_io *png_img)
 {
-	png_img->pixel_size = 4;
+	//png_img->pixel_size = 4;//for alpha
+	png_img->pixel_size = 3;
 	png_img->depth = 8;
 	png_img->png_ptr = NULL;
 	png_img->info = NULL;

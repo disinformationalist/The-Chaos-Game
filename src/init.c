@@ -38,7 +38,7 @@
     -----23 ==== NO 4 AWAY OF 1 BEFORE PREV, RIGHT
     -----24 ==== IF PREV IS NEIGH OF 1 BEFORE PREV, NO NEIGH OF 1 BEFORE PREV
     -----25 ==== IF PREV IS NEIGH OF 1 BERORE PREV, NO 2 AWAY OF 1 BEFORE PREV
-    -----26 ==== TURNS ON NO SAME AS 1 BEFORE PREV FOR 24 AND 25, 27, 28
+    -----26 ==== TURNS ON NO SAME AS 1 BEFORE PREV FOR 24 AND 25, 27, 28, 29(Modifies these three rules)
 	-----27 ==== IF PREV IS A NEIGH OF 1 BEFORE PREV, NO NEIGH OF 2 BEFORE PREV
 	-----28 ==== IF PREV IS A NEIGH OF 1 BEFORE PREV, NO 2 AWAY FROM PREV
 	-----29
@@ -54,6 +54,8 @@ void	clear_all(t_game *r)
 		free_ui_matrix(r->pixels_xl, r->height_orig * r->s_kernel);
 	if (r->img.img_ptr)
 		mlx_destroy_image(r->mlx_connect, r->img.img_ptr);
+	if (r->cmyk.img_ptr)
+		mlx_destroy_image(r->mlx_connect, r->cmyk.img_ptr);
 	if (r->mlx_win)
 		mlx_destroy_window(r->mlx_connect, r->mlx_win);
 	mlx_destroy_display(r->mlx_connect);
@@ -66,7 +68,6 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 	mlx_hook(r->mlx_win, KeyPress, KeyPressMask, key_handler, r);
 	mlx_hook(r->mlx_win, DestroyNotify, StructureNotifyMask, close_screen, r);
 	mlx_hook(r->mlx_win, ButtonPress, ButtonPressMask, mouse_handler, r);
-	
 	mlx_hook(r->mlx_win, MotionNotify, PointerMotionMask, mouse_move, r);
 	mlx_hook(r->mlx_win, ButtonRelease, ButtonReleaseMask, mouse_release, r);
 	//back compat
@@ -94,7 +95,7 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 		r->jump_to_center = 0;
 		r->mode = 1;
 		r->function_id = 0;
-		r->colors.background= 0x000000;
+		r->colors.background = 0x000000;
 	}
 	r->resize = false;
 }
@@ -115,8 +116,8 @@ void	info_init(t_game *r)
 	r->con->knob = 0;
 	r->con->base_d = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
 	//r->iters_change = 0;//for back compat
-	r->win_change_x = 0;
-	r->win_change_y = 0;
+	r->win_change_x = 1;
+	r->win_change_y = 1;
 	if (!r->god)
 	{
 		r->iters_change = 0;//just added can use in adjust window to simplify current... is num times iters key change ,1, 2 etc
@@ -135,7 +136,13 @@ void	info_init(t_game *r)
 	}
 	r->rv_len = 3;//change here and in header struct
 	r->con->max_d = r->max_distance;
+	if (!r->supersample)
+		r->start_maxd = r->con->base_d;//these are really the same, just saves  one deref in color
+	else
+		r->start_maxd = r->con->base_d * r->s_kernel;
 	init_rv(r);
+	r->vertices2 = NULL;
+	r->ratio_change = r->dist_ratio / (2 - r->dist_ratio);
 }
 
 void	r_init(t_game *r)
@@ -166,6 +173,9 @@ void	game_init(t_game *r)
 		exit(EXIT_FAILURE);
 	}
 	if (new_img_init(r->mlx_connect, &r->img, r->width, r->height) == -1)
+		clear_all(r);
+	//init cmyk image
+	if (new_img_init(r->mlx_connect, &r->cmyk, r->width, r->height) == -1)
 		clear_all(r);
 	events_init(r);
 	r->con = make_controls(r->mlx_connect);
