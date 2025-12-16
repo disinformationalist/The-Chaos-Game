@@ -139,8 +139,14 @@ int	supersample_handler(int keysym, t_game *r)
 	else if (keysym == PAD_9)
 	{
 		adjust_ratio(r, PHI);
+		
+		//adjust_ratio(r, PI_DIV_3);
 	}
 	else if (keysym == PAD_7)
-		adjust_ratio(r, 2.0 / 3.0);
+	{
+		adjust_ratio(r, INV_PHI);//use with sides on
+//		adjust_ratio(r, PI_DIV_2);//not bad
+		//adjust_ratio(r, 2.0 / 3.0);
+	}
 	return (0);
 }

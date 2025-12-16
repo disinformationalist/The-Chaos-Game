@@ -125,7 +125,17 @@ void	set_background_color(t_game *r, unsigned int background)
 	}
 }
 
+static inline uint32_t rules_to_mask(const bool *rules) 
+{
+    uint32_t m = 0;
+    for (int i = 0; i < MAX_R && i < 32; ++i) 
+		if (rules[i]) m |= (1u << i);
+    return m;
+}
+
 //This is now the main rendering function
+//need to build out a multi buffer for super, multiple char *pix, on very large images
+//they can be downsampled into the same img buffer.
 
 void	intermed(t_game *r)
 {
@@ -142,6 +152,12 @@ void	intermed(t_game *r)
 	start = get_time();
 	intermed_init(r, &vertices, &x, &y);
 
+	//build active rules
+	//build_rules_active(r->rules, r->active);
+	
+	//set up rules bitmask.
+	// rules[] -> 32-bit mask once at init
+	r->rules_mask = rules_to_mask(r->rules);
 
 	//convert_colors_to_cmyk_safe(&r->colors);//convert to cmyk safe colors for rendering with, currently turned off for black
 	set_background_color(r, r->colors.background);//no good with memset does gscale

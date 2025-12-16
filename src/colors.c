@@ -12,7 +12,7 @@
 
 #include "chaos.h"
 
-double get_distance2(double x1, double y1, double x2, double y2)
+static inline double get_distance2(double x1, double y1, double x2, double y2)
 {
 	return (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)));
 }
@@ -20,7 +20,7 @@ double get_distance2(double x1, double y1, double x2, double y2)
 
 //NOTE: 'v' can be center point, verts in the rv[] array cannot.
 
-unsigned int	color_depth_option(t_game *r, int v, double x, double y, int **vertices)
+/* unsigned int	color_depth_option(t_game *r, int v, double x, double y, int **vertices)
 {
 	unsigned int 	color;
 	double			distance;
@@ -34,15 +34,54 @@ unsigned int	color_depth_option(t_game *r, int v, double x, double y, int **vert
 	else if (r->color_depth == 1)
 	{
 		distance = get_distance2(x, y, vertices[r->rv[(r->i) % r->rv_len]][0], vertices[r->rv[(r->i) % r->rv_len]][1]);//orig
-		/* if (r->jump_to_center && (v == r->points - 1))
+		if (r->jump_to_center && (v == r->points - 1))//comment block
 			distance = sqrt((x - r->center[0]) * (x - r->center[0]) + (y - r->center[1]) * (y - r->center[1]));
 		else
-			distance = get_distance(x, y, vertices[v][0], vertices[v][1]);//dist from vert, NOT BAD TRY VARIATION LIKE DIST */ //FROM SIDES of screen!!--GReaT WITH FT MODES!!!!!!	
+			distance = get_distance(x, y, vertices[v][0], vertices[v][1]);//dist from vert, NOT BAD TRY VARIATION LIKE DIST //FROM SIDES of screen!!--GReaT WITH FT MODES!!!!!!	
 	}
 	else if (r->color_depth == 2)
 		distance = get_distance2(x, y, vertices[r->rv[(r->i - 1) % r->rv_len]][0], vertices[r->rv[(r->i - 1) % r->rv_len]][1]);
 	else if (r->color_depth == 3)
 		distance = get_distance2(x, y, vertices[r->rv[(r->i - 2) % r->rv_len]][0], vertices[r->rv[(r->i - 2) % r->rv_len]][1]);
+	else
+		distance = r->max_distance;//just a placholder for no compil err
+	if (r->color_depth == 0)
+		color = calc_color_4(distance, r->max_distance, &r->colors);
+	else
+	{
+		double rad = (double)r->r;
+		if (r->dist_ratio > 1 && r->dist_ratio < 2)//using solution to dist vs radius here
+			rad *= r->ratio_change;//changed from rad *= (2 * r->dist_ratio);
+		color = calc_color_4(distance, (r->max_distance / r->start_maxd) * rad * r->zoom, &r->colors);// dist from verts to center, max radius, then zoom, ratio to adjust, this is best way
+	}
+	//color = calc_color_4(distance , r->max_distance * r->zoom, &r->colors); // was doing * 1.33// m_dist*r->zoom to maintain color upon zooming //modulo for if zoom too high? this is the correct inversion
+	return (color);
+} */
+unsigned int	color_depth_option(t_game *r, int v, double x, double y, int **vertices)
+{
+	unsigned int 	color;
+	double			distance;
+
+	//double ratio_change = r->dist_ratio / (2 - r->dist_ratio);
+	//(void)v;
+	if (r->color_depth == 0)
+		distance = get_distance2(x, y, r->center[0], r->center[1]);//from center of shape
+		//distance = get_distance2(x, y, r->width / 2, r->height / 2);//from center of screen
+	else if (r->color_depth == 1)
+	{
+		distance = get_distance2(x, y, vertices[v][0], vertices[v][1]);//does doing this way affect disinfo coloring? yes, but good 
+		//distance = get_distance2(x, y, vertices[r->rv[(r->i) % r->rv_len]][0], vertices[r->rv[(r->i) % r->rv_len]][1]);//orig
+		/* if (r->jump_to_center && (v == r->points - 1))
+			distance = sqrt((x - r->center[0]) * (x - r->center[0]) + (y - r->center[1]) * (y - r->center[1]));
+		else
+			distance = get_distance2(x, y, vertices[v][0], vertices[v][1]);//dist from vert, NOT BAD TRY VARIATION LIKE DIST */ //FROM SIDES of screen!!--GReaT WITH FT MODES!!!!!!	
+	}
+	else if (r->color_depth == 2)
+		distance = get_distance2(x, y, vertices[r->rv[(r->i - 1) % r->rv_len]][0], vertices[r->rv[(r->i - 1) % r->rv_len]][1]);
+		//distance = get_distance2(x, y, vertices[r->prev][0], vertices[r->prev][1]);
+	else if (r->color_depth == 3)
+		distance = get_distance2(x, y, vertices[r->rv[(r->i - 2) % r->rv_len]][0], vertices[r->rv[(r->i - 2) % r->rv_len]][1]);
+	//distance = get_distance2(x, y, vertices[r->obp][0], vertices[r->obp][1]);
 	else
 		distance = r->max_distance;//just a placholder for no compil err
 	if (r->color_depth == 0)
@@ -78,11 +117,15 @@ void	color_option(t_game *r, int v, double x, double y, int **vertices)
 		{
 			col_x = ((x - r->width / 2) + r->col_shift_x * r->s_kernel);
 			col_y = ((y - r->height / 2) + r->col_shift_y * r->s_kernel);
+			/* col_x = ((x - vertices[v][0]) + r->col_shift_x * r->s_kernel);
+			col_y = ((y - vertices[v][1]) + r->col_shift_y * r->s_kernel); */
 		}
 		else
 		{
 			col_x = ((x - r->width / 2) + r->col_shift_x);
 			col_y = ((y - r->height / 2) + r->col_shift_y);
+			/* col_x = ((x - vertices[v][0]) + r->col_shift_x);
+			col_y = ((y - vertices[v][1]) + r->col_shift_y); */
 		}
 		color = get_color_source( col_x, col_y, r->w_colors, 360, r->color_rot);
 	

@@ -15,14 +15,49 @@
 //consider different method of updating rv array so that rv[2] is most recent, rv[1] = rv[2], rv[0] = rv[1] save separate and try reformat.
 void	information(t_game *r, int v, long i)
 {
+	/* int position1, position2;
+	
+	position1 = (i - 1) % r->rv_len;
+	r->prev = r->rv[position1];//save actual for depth color
+	position2 = (i - 2) % r->rv_len;
+	r->obp = r->rv[position2]; */
 	if (r->jump_to_center && (v == r->points - 1))
 		return ;
 	if (r->disinfo_1)
+	{
 		r->rv[(i - 1) % r->rv_len] = v;
+		//r->rv[position1] = v;
+	}
 	if (r->disinfo_2)
+	{
 		r->rv[(i - 2) % r->rv_len] = v;
-	else if (!r->disinfo_1 && !r->disinfo_1)
+		//r->rv[position2] = v;
+	}
+	else if (!r->disinfo_1)
+	{
 		r->rv[i % r->rv_len] = v;
+	}
+
+/* 	(void)i;
+	if (r->disinfo_1)
+	{
+		r->tbp = r->obp;
+		r->obp = v;
+		//r->prev = r->tbp;
+	}
+	if (r->disinfo_2)
+	{
+		//this is making d2 + d1, others dont work..
+		r->tbp = r->prev;
+		r->prev = r->obp;
+		r->obp = v;
+	}
+	else if (!r->disinfo_1)
+	{
+		r->tbp = r->obp;
+		r->obp = r->prev;
+		r->prev = v;
+	} */
 }
 
 int	r_loop(t_game *r, Xoro128 *rng)
@@ -33,19 +68,34 @@ int	r_loop(t_game *r, Xoro128 *rng)
 
 	tries = 0;
 	p = r->points;
-	//v = rand() % r->points;
 	v = xoro128(rng) % p;
 	if (r->jump_to_center && (v == p - 1))// implement center rules here!
 		return (v);
-	while (ft_r(r->rv, v, r->i, r))
+		//while (set_and_check(r->rv, v, r->i, r))
+	while (ft_r(r->rv, v, r->i, r))//orig
 	{
-		//v = rand() % r->points;
 		v = xoro128(rng) % p;
 		tries++;
 		if (tries >= 250)
 			return (-1);
 	}
 	return (v);
+}
+
+//test print
+void	print_rv(int v, int iter, int rv[], int rv_len)
+{
+	int i;
+
+	printf("current vert: %d\n", v);
+	printf("iter: %d i_mod_rvlen: %d     (i - 1)mod_rvlen: %d     (i - 2)mod_rvlen: %d\n", iter, rv[iter % rv_len], rv[(iter - 1) % rv_len], rv[(iter - 2) % rv_len]);
+	i = -1;
+	while (++i < rv_len)
+	{
+		printf("index: %d vert: %d\n", i, rv[i]);
+	}
+	printf("\n");
+
 }
 
 void	chaos_game(t_game *r, int **vertices, double x, double y)
@@ -67,6 +117,7 @@ void	chaos_game(t_game *r, int **vertices, double x, double y)
 		if (v == -1)
 			break ;
 		information(r, v, r->i);
+		//print_rv(v, r->i, r->rv, r->rv_len);
 		
 		if (r->jump_to_center && (v == r->points - 1))//handle center
 		{
@@ -96,6 +147,7 @@ void	chaos_game(t_game *r, int **vertices, double x, double y)
 		/* dist = sqrt((x - r->center[0]) * (x - r->center[0]) + (y - r->center[1]) * (y - r->center[1]));
 		if (dist > big)
 			big = dist; */
+		//information(r, v, r->i);
 
 	}
 	//print test new rad

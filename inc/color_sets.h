@@ -120,6 +120,9 @@ extern const t_colors UNNAMED_1;
 extern const t_colors ORIGINAL;
 extern const t_colors NEBULA;
 extern const t_colors ETERNAL_SPRING;
+
+extern const t_colors DUSK;
+
 extern const t_colors HIGH_SUMMER;
 extern const t_colors WAXING_AUTUMN;
 extern const t_colors DEEP_WINTER;

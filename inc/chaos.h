@@ -35,13 +35,46 @@
 
 # define PHI 1.61803398875
 # define TWO_PI 6.283185
+# define INV_E 0.36787944
 
+/* Interesting constants strictly in (0.5, φ) */
+
+# define INV_PHI                 0.6180339887498948  // 1/phi (golden ratio reciprocal)
+# define EULER_GAMMA             0.5772156649015329  // Euler–Mascheroni constant γ
+# define LAMBERT_W1              0.5671432904097838  // Omega constant W(1), solves W*e^W = 1
+# define LN_2                    0.6931471805599453  // natural log of 2
+# define SQRT2_DIV_2             0.7071067811865476  // √2 / 2 = cos(45°)
+# define DOTTIE                  0.7390851332151607  // fixed point of cos(x) in radians
+# define GOLOMB_DICKMAN_LAMBDA   0.6243299885435509  // Golomb–Dickman constant λ
+# define TWIN_PRIME_C2           0.6601618158468696  // twin prime constant C2
+# define LAPLACE_LIMIT           0.6627434193491816  // Laplace limit for Kepler series
+# define CAHEN                   0.6434105462883380  // Cahen’s constant (Sylvester reciprocals)
+# define SQRT3_DIV_2             0.8660254037844386  // √3 / 2 = sin(60°)
+# define E_DIV_PI                0.8652559794322651  // e / π
+# define CATALAN_G               0.9159655941772190  // Catalan’s constant G
+# define LANDau_RAMANUJAN        0.7642236535892206  // Landau–Ramanujan constant
+# define AGM_GAUSS               0.8346268416740731  // Gauss’s AGM constant
+# define PI_DIV_3                1.0471975511965976  // π / 3 (60°)
+# define SQRT5_DIV_2             1.1180339887498950  // √5 / 2
+# define VISWANATH               1.1319882487943000  // Viswanath’s constant (random Fibonacci growth)
+# define LEVY_CONST              1.1865691104156252  // Lévy constant π² / (12 ln 2)
+# define APERY_ZETA3             1.2020569031595942  // Apéry’s constant ζ(3)
+# define GLAISHER_A              1.2824271291006226  // Glaisher–Kinkelin constant A
+# define CONWAY_CONST            1.3035772690342960  // Conway’s constant (look-and-say growth)
+# define MILLS_CONST             1.3063778838630806  // Mills’ constant (assuming RH)
+# define PLASTIC                 1.3247179572447458  // plastic constant ρ, real root of x³ = x + 1
+# define RAMANUJAN_SOLDNER       1.4513692348833810  // Ramanujan–Soldner constant μ (li(μ) = 0)
+# define SQRT2                   1.4142135623730951  // √2
+# define PI_DIV_2                1.5707963267948966  // π / 2 (90°)
+# define ERDOS_BORWEIN           1.6066951524152918  // Erdős–Borwein constant
 
 #define RULE(mask, n) (((mask) >> (n)) & 1)
 
 static inline int wrap_index(int i, int max) {
 	return (i + max) % max;
 }
+
+#define MAX_R 30
 
 typedef struct s_control
 {
@@ -131,18 +164,27 @@ typedef struct s_data
 
 } t_data;
 
+typedef bool (*rule_ft)(int v, const t_relations *rels);
+
 typedef struct s_game
 {
-	uint32_t	rules_mask;
+	//uint32_t	rules_mask;
 	Xoro128		rng;
 	t_data		*data;
-	t_control 	*con;//in prog
+	t_control 	*con;
 	bool		con_open;
 	bool		on_con;
 	t_3color	curr_col;
 	double		start_maxd;
 	double		ratio_change;
 	int			**vertices2;
+	
+	rule_ft 	active[MAX_R + 1];
+	uint32_t	rules_mask;//rules mask
+	int			prev;//prev vert ind
+	int			obp;//one before prev
+	int			tbp;//two before
+
 
 //---included in god data----
 	bool		god;
@@ -202,6 +244,12 @@ typedef struct s_game
 	int			width_orig;
 	int			height_orig;
 }		t_game;
+
+
+void	build_rules_active(const bool *rules, rule_ft active[MAX_R + 1]);
+int		set_and_check(int rv[], int v, long i, t_game *r);
+
+
 
 void		print_time(long start, long end, char *msg);
 void		convert_colors_to_cmyk_safe(t_colors *colors);

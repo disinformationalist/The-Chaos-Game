@@ -20,6 +20,8 @@ const t_colors UNNAMED_1 = {COL_CYAN, MALACHITE_GREEN, GOLD, SINISTER_RED, BLACK
 const t_colors ORIGINAL = {COL_CYAN, COL_MAGENTA, COL_YELLOW, COL_BLUE, BLACK1};
 const t_colors NEBULA = {INDIGO_PURPLE, DARK_ORCHID, GOLD_2, ORANGE_RED, BLACK1};
 const t_colors ETERNAL_SPRING = {CHARTREUSE, HOT_PINK, DARK_TURQUOISE, GOLD_2, BLACK1};
+const t_colors DUSK = {0x9253FF, 0xFFC64F, 0xE7F2FF, 0x878EFF, BLACK1};
+
 const t_colors HIGH_SUMMER = {TOMATO_RED, GOLD_2, LIME_GREEN, STEEL_BLUE, BLACK1};
 const t_colors WAXING_AUTUMN = {CHOCOLATE, ORANGE_RED, ORANGE, SADDLE_BROWN, BLACK1};
 const t_colors DEEP_WINTER = {SKY_BLUE, STEEL_BLUE, COL_WHITE, SLATE_GRAY, BLACK1};
@@ -30,7 +32,7 @@ const t_colors GUN = {STEEL_GRAY, SILVER, BRONZE, GUNMETAL_2, BLACK1};
 static int	key_handler_other_4layer(int keysym, t_game *r)
 {
 	if (keysym == KEY_Y)
-		r->colors = ETERNAL_SPRING;
+		r->colors = DUSK;
 	else if (keysym == KEY_X)
 		r->colors = HIGH_SUMMER;
 	else if (keysym == KEY_C)

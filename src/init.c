@@ -107,6 +107,10 @@ void	init_rv(t_game *r)
 	i = -1;
 	while (++i < r->rv_len)
 		r->rv[i] = i;
+	r->prev = 1;
+	r->obp = 0;
+	r->tbp = 2;
+
 }
 
 void	info_init(t_game *r)
@@ -130,16 +134,15 @@ void	info_init(t_game *r)
 		r->dist_ratio = .5;
 		//height and width based params
 		r->r = r->height / 2 - r->height / 10;
-		//if (!r->supersample)
-		r->iters = (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);//may adjust but seems good for now..iters = area of hexagon.
-		r->max_distance = r->con->base_d;//changed from width/2 to dist to corner.
+		r->iters = (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);//may adjust but seems good for now..iters = based on area of hexagon.//try generalizing all these to be area of shape
+		r->max_distance = r->con->base_d;//changed from width/2 to dist to corner.//hex area = (3*sqrt(3) /2) * r * r, A = (n/2) * r² * sin(360°/n).
 	}
 	r->rv_len = 3;//change here and in header struct
 	r->con->max_d = r->max_distance;
-	if (!r->supersample)
-		r->start_maxd = r->con->base_d;//these are really the same, just saves  one deref in color
-	else
+	if (r->god && r->supersample)
 		r->start_maxd = r->con->base_d * r->s_kernel;
+	else
+		r->start_maxd = r->con->base_d;//these are really the same, just saves  one deref in color
 	init_rv(r);
 	r->vertices2 = NULL;
 	r->ratio_change = r->dist_ratio / (2 - r->dist_ratio);
@@ -153,8 +156,8 @@ void	r_init(t_game *r)
 	r->num_rules = 30;
 	while(++i < r->num_rules)
 		r->rules[i] = 0;
-	r->disinfo_1 = 0;
-	r->disinfo_2 = 0;
+	r->disinfo_1 = false;
+	r->disinfo_2 = false;
 	
 }
 
