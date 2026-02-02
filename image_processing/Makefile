@@ -4,17 +4,37 @@ SRC_DIR = ./src
 OBJ_DIR = ./obj
 INC_DIR = ./inc
 
-SRCS := ./src/mean_convo_filter.c ./src/gaussian_convo_filter.c ./src/my_pixel_puts.c ./src/gamma_correction.c \
-./src/import_export/export_png.c ./src/import_export/export_png_utils.c ./src/sample.c ./src/create_img.c ./src/adjust_pixels_rgb.c \
-./src/import_export/import_png.c ./src/import_export/import_png_utils.c ./src/padding/pad_borders.c ./src/sobel.c ./src/convolution_utils.c \
-./src/padding/pad_mirror.c ./src/printing_utils.c ./src/padding/pad_mirror_kernel.c ./src/matrix_utils.c \
-./src/set_color_wheel.c ./src/get_next_name.c ./src/libft_utils.c ./src/interpolate_two_colors.c \
-./src/color_source_wheel.c ./src/threading_tools.c ./src/nlm/non_local_means.c ./src/padding/pad_mirror_circle.c \
+SRCS := ./src/mean_convo_filter.c \
+./src/gaussian_convo_filter.c \
+./src/my_pixel_puts.c \
+./src/gamma_correction.c \
+./src/import_export/export_png.c \
+./src/import_export/export_png_utils.c \
+./src/sample.c \
+./src/create_img.c \
+./src/adjust_pixels_rgb.c \
+./src/import_export/import_png.c \
+./src/import_export/import_png_utils.c \
+./src/import_export/import_png_utils2.c \
+./src/padding/pad_borders.c \
+./src/sobel.c ./src/convolution_utils.c \
+./src/padding/pad_mirror.c \
+./src/printing_utils.c \
+./src/padding/pad_mirror_kernel.c \
+./src/matrix_utils.c \
+./src/set_color_wheel.c \
+./src/get_next_name.c \
+./src/libft_utils.c \
+./src/interpolate_two_colors.c \
+./src/color_source_wheel.c \
+./src/threading_tools.c \
+./src/nlm/non_local_means.c \
+./src/padding/pad_mirror_circle.c \
 ./src/padding/pad_mirror_pix.c \
 ./src/padding/pad_mirror_mat.c \
 ./src/nlm_rouselle/nlm_rouselle.c \
 ./src/nlm/nlm_utils.c \
-./src/re_color_buddha.c \
+./src/re_color_buddha.c
 
 
 #SRCS = $(wildcard $(SRC_DIR)/*.c)
@@ -46,6 +66,7 @@ $(NAME): $(OBS)
 	$(call print_colored, "[SUCCESS]", "archive $(NAME)", "Ready")
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

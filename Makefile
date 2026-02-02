@@ -17,29 +17,30 @@ OBJ_DIR = ./obj
 INC_DIR = ./inc
 
 SRCS := ./src/main.c \
+./src/events/events.c \
+./src/events/events_gui.c \
+./src/events/events_mouse_move.c \
+./src/events/events_mouse_super.c \
+./src/events/events_other.c \
+./src/events/events_rules.c \
+./src/print_and_save_utils/get_god_data.c \
+./src/print_and_save_utils/print_utils.c \
+./src/print_and_save_utils/print_utils_2.c \
+./src/print_and_save_utils/set_godmode_data.c \
+./src/print_and_save_utils/set_png_board.c \
+./src/print_and_save_utils/time_utils.c \
 ./src/chaos.c \
+./src/cmyk.c \
 ./src/colors.c \
-./src/events.c \
-./src/events_rules.c \
-./src/events_mouse_super.c \
-./src/events_other.c \
+./src/controls.c \
+./src/games.c \
 ./src/init.c \
+./src/render.c \
+./src/resize_window.c \
 ./src/rules.c \
 ./src/set_polygon.c \
-./src/intermed.c \
-./src/print_utils.c \
-./src/print_utils_2.c \
-./src/games.c \
-./src/set_png_board.c \
-./src/set_godmode_data.c \
-./src/get_god_data.c \
-./src/resize_window.c \
-./src/time_utils.c \
-./src/controls.c \
 ./src/set_con.c \
-./src/events_gui.c \
-./src/events_mouse_move.c \
-./src/cmyk.c
+./src/texture.c
 
   
 CFLAGS := -Wall -Wextra -Werror -I$(INC_DIR) -Ofast -march=native -Wno-unused-result

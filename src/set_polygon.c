@@ -10,8 +10,8 @@ void	free_poly(int ***vertices, int i)
 
 void	malloc_points(int ***vertices, t_game *r)
 {
-	int i;
-	int **verts2;
+	int	i;
+	int	**verts2;
 
 	verts2 = (int **)malloc(r->points * sizeof(int *));
 	if (!verts2)
@@ -23,7 +23,7 @@ void	malloc_points(int ***vertices, t_game *r)
 		clear_all(r);
 	}
 	i = -1;
-	while (++i < r->points - r->jump_to_center)
+	while (++i < r->points)// - r->jump_to_center)// center currently stored in last when on
 	{
 		(*vertices)[i] = (int *)malloc(2 * sizeof(int));
 		(verts2)[i] = (int *)malloc(2 * sizeof(int));
@@ -37,22 +37,26 @@ void	malloc_points(int ***vertices, t_game *r)
 	r->vertices2 = verts2;
 }
 
-void	set_verts_sides_on(int ***vertices, t_game *r, double angle)
+void	set_verts_sides_on(int ***vertices, t_game *r, double angle, double factor)
 {
-	int	i;
-	int j;
+	int		i;
+	int		j;
+	double	final_angle;
+	double	shift_angle;
 
 	i = 0;
 	j = 0;
-	while (i < r->points - 1)//set verts
+	shift_angle = M_PI / 2 + r->rotate;
+	while (i < r->points - r->jump_to_center)//set verts
 	{
-		(*vertices)[i][0] = r->width / 2 + (r->move_x + r->r * cos(angle * j - M_PI / 2  + r->rotate)) * r->zoom;
-		(*vertices)[i][1] = r->height / 2 + (r->r * sin(angle * j - M_PI / 2  + r->rotate) - r->move_y) * r->zoom;
+		final_angle = angle * j - shift_angle;
+		(*vertices)[i][0] = r->width / 2 + (r->move_x + factor * r->r * cos(final_angle)) * r->zoom;
+		(*vertices)[i][1] = r->height / 2 + (factor * r->r * sin(final_angle) - r->move_y) * r->zoom;
 		i += 2;
 		j++;
 	}
 	i = 1;
-	while (i < r->points - 2)//set sides
+	while (i < r->points - r->jump_to_center - 1)//set sides
 	{
 		(*vertices)[i][0] = ((*vertices)[i - 1][0] + (*vertices)[i + 1][0]) / 2;
 		(*vertices)[i][1] = ((*vertices)[i - 1][1] + (*vertices)[i + 1][1]) / 2;
@@ -60,12 +64,37 @@ void	set_verts_sides_on(int ***vertices, t_game *r, double angle)
 	}
 	(*vertices)[i][0] = ((*vertices)[i - 1][0] + (*vertices)[0][0]) / 2;
 	(*vertices)[i][1] = ((*vertices)[i - 1][1] + (*vertices)[0][1]) / 2;
+	if (r->jump_to_center)// center currently stored in last when on
+	{
+		(*vertices)[r->points - 1][0] = r->center[0];
+		(*vertices)[r->points - 1][1] = r->center[1];
+	}
+}
+
+void	set_verts(int ***vertices, t_game *r, double angle, double factor)
+{
+	int		i;
+	double	final_angle;
+	double	shift_angle;
+	
+	i = -1;
+	shift_angle = M_PI / 2 + r->rotate;
+	while (++i < r->points - r->jump_to_center)
+	{
+		final_angle = angle * i - shift_angle;
+		(*vertices)[i][0] = r->width / 2 + (r->move_x + factor * r->r * cos(final_angle)) * r->zoom;
+		(*vertices)[i][1] = r->height / 2 + (factor * r->r * sin(final_angle) - r->move_y) * r->zoom;
+	}
+	if (r->jump_to_center)// center currently stored in last when on
+	{
+		(*vertices)[i][0] = r->center[0];
+		(*vertices)[i][1] = r->center[1];
+	}
 }
 
 void	polygon(int ***vertices, t_game *r)
 {
 	double	angle;
-	int		i;
 
 	malloc_points(vertices, r);
 	angle = 2 * M_PI / r->sides;
@@ -73,22 +102,28 @@ void	polygon(int ***vertices, t_game *r)
 	r->center[0] = r->width / 2 + r->move_x * r->zoom;
 	r->center[1] =  r->height / 2 - r->move_y * r->zoom;
 	if (r->jump_to_sides)
-		set_verts_sides_on(vertices, r, angle);
+		set_verts_sides_on(vertices, r, angle, 1);
+	else
+		set_verts(vertices, r, angle, 1);
+
+	//set v2 for color
+	//can also add x or y to move the color verts independently.... mouse click and drag verts?
+	//pack vert shifts as whole pixel moves in x, y into 32bit int?//nah USE AN ARRAY WITH X,Y vals TO SHIFT BY
+	//maybe have center as color vert when r->jump_to_center == true.// 2layer for center and side color activation on same keys, ?,`
+	//in info maybe dont store center jump for shape rules.
+	if (r->dist_ratio <= 1)// || r->dist_ratio == 2)
+	{
+		if (r->jump_to_sides)
+			set_verts_sides_on(&r->vertices2, r, angle, r->vert_dist);
+		else
+			set_verts(&r->vertices2, r, angle, r->vert_dist);
+	}
 	else
 	{
-		i = -1;
-		while (++i < r->points - r->jump_to_center)
-		{
-			(*vertices)[i][0] = r->width / 2 + (r->move_x + r->r * cos(angle * i - M_PI / 2 + r->rotate)) * r->zoom;
-			(*vertices)[i][1] = r->height / 2 + (r->r * sin(angle * i - M_PI / 2 + r->rotate) - r->move_y) * r->zoom;
-		}
-	}
-	//set v2 for color
-	i = -1;
-	double n = r->ratio_change;
-	while (++i < r->points - r->jump_to_center)
-	{
-		(r->vertices2)[i][0] = (int)(n * ((double)(*vertices)[i][0] - r->move_x * r->zoom) + (double)r->width * ((1 - n) / 2)) + r->move_x * r->zoom;
-		(r->vertices2)[i][1] = (int)(n * ((double)(*vertices)[i][1] + r->move_y * r->zoom) + (double)r->height * ((1 - n) / 2)) - r->move_y * r->zoom;
+		if (r->jump_to_sides)
+			set_verts_sides_on(&r->vertices2, r, angle, r->vert_dist * r->ratio_change);
+		else
+			set_verts(&r->vertices2, r, angle, r->vert_dist * r->ratio_change);
 	}
 }
+		

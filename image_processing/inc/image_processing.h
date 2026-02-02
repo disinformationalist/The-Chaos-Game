@@ -45,12 +45,10 @@ typedef struct s_img
 
 t_img			*nlm_rouselle_vars(void *mlx_ptr, t_img *img, int width, int height, int patch_size);//testing
 t_pixel 		**pad_zeros_pix(t_pixel **pix, int width, int height, int layers);
-
 t_pixeld		**malloc_pixel_d_matrix(int width, int height);
 void			free_pix_d_matrix(t_pixeld **matrix, int j);
 t_pixeld		**pad_zeros_pix_d(t_pixeld **pix, int width, int height, int layers);
 void			free_int_matrix(int **matrix, int j);
-
 
 //NON LOCAL MEANS
 
@@ -91,9 +89,9 @@ t_img			*img_dup(void *mlx_ptr, t_img *img, int width, int height);
 
 /***COLORS***/
 int				*set_color_wheel(int num_colors, double saturation, double lightness, int base_hue);
-unsigned int	get_color_source(double x, double y, int *colors, int num_colors, int rot);
+unsigned int	get_color_source(double x, double y, int *colors, int num_colors, int rot, double freq);
 unsigned int	interpolate_two_colors(int color1, int color2, double t);
-
+unsigned int	get_color_source_spiral(double x, double y, int *colors, int num_colors, int rot, double spiral_strength);
 
 /****THREADING TOOLS****/
 int				get_num_cores(void);
@@ -101,7 +99,6 @@ void			join_threads(pthread_t *threads, int num_rows, int num_cols);
 void			set_least_diff_pair(int num, int *fact1, int *fact2);
 long			get_time(void);
 void			print_times(long start, long end, char *title, char *msg, char *color);
-
 
 /******IMAGE PROCESSING FUNCTIONS******/
 
@@ -172,7 +169,9 @@ void			gamma_correct_rgb(t_img *img, int width, int height, double gamma, t_chan
 
 
 /******EXPORT******/
-int				export_png(const char *filename, t_img *img, int width, int height, png_text *text);
+//int				export_png(const char *filename, t_img *img, int width, int height, png_text *text);
+int					export_png(const char *filename, t_img *img, int width, int height, png_text *text, t_pixel_format fmt);
+
 
 //export utils
 char 			*get_nxt_name(char *name);
@@ -184,14 +183,26 @@ int				init_png_structs(t_png_io *png_img, const char *filename);
 int				error_1(t_png_io *png_img, const char *msg);
 void			free_png_rows(png_structp png_ptr, png_byte **row_pointers, int j);
 void			clean_memory(t_png_io *png_img, int j, bool export);
-void			init_vars(t_png_io *png_img);
+void			init_vars(t_png_io *png_img, t_pixel_format fmt);
+
+
 
 /*****IMPORT******/
-t_img			*import_png(void *mlx_ptr, const char *filename, int *width, int *height);
 
-//import utils
+//import png img.
+t_img			*import_png(void *mlx_ptr, \
+				const char *file, int *width, int *height);
+int				init_import_vars(t_png_io *png_img);
 void			*error_2(t_png_io *png_img, const char *msg);
 int				error_3(t_png_io *png_img, const char *msg);
+void			set_img_pixels_rgb(t_png_io *png_img, \
+				t_img *image, int width, int height);
+void			set_img_pixels_rgba(t_png_io *png_img, \
+				t_img *image, int width, int height);
+void			set_img_pixels_gray(t_png_io *png_img, \
+				t_img *image, int width, int height);
+void			set_img_pixels_gray_alpha(t_png_io *png_img, \
+				t_img *image, int width, int height);
 
 /****PRINTING UTILS****/
 void			print_matrix(double **matrix, int cols, int rows);

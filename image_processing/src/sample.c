@@ -206,11 +206,12 @@ void	downsample_double(int width, int height, double **dst, double **src, int ke
 	}
 }
 
-static void	filter_section_xl(t_img *img, unsigned int **pixels_xl, int kern_size, t_filter *f)
+static void	filter_section_xl(t_img *img, unsigned int **pixels_xl, int kern_size, t_filter *f, const int N)
 {
-	f->red = 0;
+	f->red = 0;//these are the sums of each square (kern X kern) section
 	f->green = 0;
 	f->blue = 0;
+	f->alpha = 0;
 	f->j = -1;
 	while (++f->j < kern_size)
 	{
@@ -218,22 +219,79 @@ static void	filter_section_xl(t_img *img, unsigned int **pixels_xl, int kern_siz
 		while (++f->i < kern_size)
 		{	
 			f->pixel = pixels_xl[f->y + f->j][f->x + f->i];
+			f->alpha += (f->pixel >> 24);
 			f->red += (f->pixel >> 16) & 0xFF;
 			f->green += (f->pixel >> 8) & 0xFF;
 			f->blue += f->pixel & 0xFF;
 		}
 	}
-	f->avg_r = f->red / (kern_size * kern_size);
-	f->avg_g = f->green / (kern_size * kern_size);
-	f->avg_b = f->blue / (kern_size * kern_size);
+	f->avg_r = f->red / N;
+	f->avg_g = f->green / N;
+	f->avg_b = f->blue / N;
+	f->avg_t = f->alpha / N;
+
 	my_pixel_put(f->pix_x, f->pix_y, img, \
-	((f->avg_r << 16) | (f->avg_g << 8) | f->avg_b));
+	((f->avg_t << 24) | (f->avg_r << 16) | (f->avg_g << 8) | f->avg_b));
 }
+
+/* static void filter_section_xl(t_img *img, unsigned int **pixels_xl, int kern_size, t_filter *f, const int N)
+{
+    uint64_t sumA  = 0;
+    uint64_t sumRA = 0;
+    uint64_t sumGA = 0;
+    uint64_t sumBA = 0;
+
+    f->j = -1;
+    while (++f->j < kern_size)
+    {
+        f->i = -1;
+        while (++f->i < kern_size)
+        {
+            unsigned int px = pixels_xl[f->y + f->j][f->x + f->i];
+
+            uint32_t a = (px >> 24);
+            uint32_t r = (px >> 16) & 0xFF;
+            uint32_t g = (px >>  8) & 0xFF;
+            uint32_t b = px & 0xFF;
+
+            sumA  += a;
+            sumRA += (uint64_t)r * a;
+            sumGA += (uint64_t)g * a;
+            sumBA += (uint64_t)b * a;
+        }
+    }
+
+    // Average alpha (0..255)
+    uint32_t avgA = (uint32_t)((sumA + (N/2)) / (uint64_t)N);
+
+    uint32_t outR = 0, outG = 0, outB = 0;
+
+    if (sumA != 0)
+    {
+        // Compute average premultiplied channels: (sum(R*A)/N)
+        // Then unpremultiply by avgA:
+        //
+        // outR = ( (sumRA/N) * 255 ) / (sumA/N)  == (sumRA * 255) / sumA
+        //
+        // Use rounding:
+        outR = (uint32_t)((sumRA + (sumA/2)) / sumA);
+        outG = (uint32_t)((sumGA + (sumA/2)) / sumA);
+        outB = (uint32_t)((sumBA + (sumA/2)) / sumA);
+
+        if (outR > 255) outR = 255;
+        if (outG > 255) outG = 255;
+        if (outB > 255) outB = 255;
+    }
+    my_pixel_put(f->pix_x, f->pix_y, img,
+        ((avgA << 24) | (outR << 16) | (outG << 8) | outB));
+} */
+
 
 void	downsample_xl(int width, int height, t_img *img, unsigned int **pixels_xl, int kern_size)
 {
 	t_filter	f;
 	
+	const int N = SQ(kern_size);
 	f.pix_y = 0;
 	f.y = 0;
 	while (f.y < height)
@@ -242,7 +300,7 @@ void	downsample_xl(int width, int height, t_img *img, unsigned int **pixels_xl, 
 		f.pix_x = 0;
 		while (f.x < width)
 		{
-			filter_section_xl(img, pixels_xl, kern_size, &f);
+			filter_section_xl(img, pixels_xl, kern_size, &f, N);
 			f.x += kern_size;
 			f.pix_x++;
 		}

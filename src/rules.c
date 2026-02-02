@@ -103,7 +103,6 @@ void	compute_rels(int rv[], t_relations *rels, t_game *r, long i)
 	rels->right_neighbor_of_prev = (rels->prev + 1) % r->points;
 }
 
-
 int	set_and_check(int rv[], int v, long i, t_game *r)
 {
 
@@ -144,13 +143,14 @@ static inline int	ft_r_2(int v, t_game *r, t_relations *rels, uint32_t m)
     if (m & (1u << 10)) if (v == rels->fourth_left_neigbor_of_prev) return 1;
     if (m & (1u << 11)) if (v == rels->fourth_right_neigbor_of_prev) return 1;
     if (m & (1u << 16)) 
-		if (rels->one_before_prev == rels->prev)//if double
-		{
-			if (v == rels->fourth_left_neigbor_of_prev)
-				return (1);
-			if (v == rels->fourth_right_neigbor_of_prev)
-				return (1);
-		}
+	
+	if (rels->one_before_prev == rels->prev)//if double
+	{
+		if (v == rels->fourth_left_neigbor_of_prev)
+			return (1);
+		if (v == rels->fourth_right_neigbor_of_prev)
+			return (1);
+	}
 
     if (m & (1u << 12)) 
 		if (rels->one_before_prev == rels->prev)//if double
@@ -244,7 +244,6 @@ static inline int	ft_r_5(int rv[], int v, long i, t_game *r, t_relations *rels, 
 		if (m & (1u << 25) && v == rels->prev)
 			return (1);
 	}
-	//------new rules-----
 	if (m & (1u << 28) && (rels->prev == rels->right_neigbor_of_one_before_prev//29
 			|| rels->prev == rels->left_neigbor_of_one_before_prev))
 	{
@@ -255,7 +254,6 @@ static inline int	ft_r_5(int rv[], int v, long i, t_game *r, t_relations *rels, 
 		if (m & (1u << 25) && v == rels->one_before_prev)
 			return (1);
 	}
-	//---------
 	return (0);
 }
 

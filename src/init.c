@@ -12,11 +12,15 @@
 
 #include "chaos.h"
 
+
 	/*-------RULES---------*/
-	/*---1 ===== NO DOUBLES
+
+	/* MOD => MODIFIES OTHER RULES OR RULE SET */
+	
+	/*---1 ===== NO DOUBLES(SAME AS PREV)
 	-----2 ===== NO LEFT NEIGHBOR OF PREVIOUS
 	-----3 ===== NO RIGHT NEIGHBOR OF PREVIOUS
-    -----4 ===== IF SAME TWICE(DOUBLE), NO NEIGHBOR 1 AWAY
+    -----4 ===== IF DOUBLE, NO NEIGHBOR 1 AWAY
     -----5 ===== NOT SAME AS 1 BEFORE PREVIOUS
     -----6 ===== NO 2 AWAY LEFT
     -----7 ===== NO 2 AWAY RIGHT
@@ -38,16 +42,28 @@
     -----23 ==== NO 4 AWAY OF 1 BEFORE PREV, RIGHT
     -----24 ==== IF PREV IS NEIGH OF 1 BEFORE PREV, NO NEIGH OF 1 BEFORE PREV
     -----25 ==== IF PREV IS NEIGH OF 1 BERORE PREV, NO 2 AWAY OF 1 BEFORE PREV
-    -----26 ==== TURNS ON NO SAME AS 1 BEFORE PREV FOR 24 AND 25, 27, 28, 29(Modifies these three rules)
+    
+	***26 MODIFIES 24, 25, 27, 28, AND 29 WHENEVER ANY COMBO OF THESE IS ACTIVE
+	
+	-MOD-26 ==== NO SAME AS 1 BEFORE PREV WHEN FOLLOWING ARE ON: 24, 25, 27, 28, 29
+
 	-----27 ==== IF PREV IS A NEIGH OF 1 BEFORE PREV, NO NEIGH OF 2 BEFORE PREV
 	-----28 ==== IF PREV IS A NEIGH OF 1 BEFORE PREV, NO 2 AWAY FROM PREV
-	-----29
-    -----DISINFO_1 ==== DISINFORM RECENT VERTS 1 BACK
-    -----DISINFO_2 ==== DISINFORM RECENT VERTS 2 BACK*/
+	-----29 ==== IF PREV IS A NEIGH OF 1 BEFORE PREV, NO 3 AWAY FROM ONE BEFORE PREV  
+	-----30 ==== NOT SET
+
+	***THESE TWO MODIFY CURRENT ACTIVE RULE SET***
+	
+	-MOD-DISINFO_1 ==== DISINFORM RECENT VERTS 1 BACK
+    -MOD-DISINFO_2 ==== DISINFORM RECENT VERTS 2 BACK
+	*/
+
 void	clear_all(t_game *r)
 {
+	if (r->texture)
+		free(r->texture);
 	if (r->con)
-		free_controls(r->mlx_connect, r->con);
+		destroy_controls(r->mlx_connect, r->con);
 	if (r->w_colors)
 		free(r->w_colors);
 	if (r->pixels_xl)
@@ -70,13 +86,18 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 	mlx_hook(r->mlx_win, ButtonPress, ButtonPressMask, mouse_handler, r);
 	mlx_hook(r->mlx_win, MotionNotify, PointerMotionMask, mouse_move, r);
 	mlx_hook(r->mlx_win, ButtonRelease, ButtonReleaseMask, mouse_release, r);
-	//back compat
-	//r->colors = ORIGINAL;
-/* 	r->color_depth = 0;
-	r->color_op = 0; 
-	r->col_shift_x = 0;
-	r->col_shift_y = 0;
-	r->color_rot = 0; */
+	
+
+	//this sets off transpar on old images, maybe fix in the importer when detecting Rgb type
+	if (r->god)
+	{
+		r->colors.background |= 0xFF000000;
+		r->colors.color_1 |= 0xFF000000;
+		r->colors.color_2 |= 0xFF000000;
+		r->colors.color_3 |= 0xFF000000;
+		r->colors.color_4 |= 0xFF000000;
+	}
+
 	if (!r->god)//must place these outside of this for backward compat.
 	{
 		r->colors = ORIGINAL;
@@ -95,7 +116,7 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 		r->jump_to_center = 0;
 		r->mode = 1;
 		r->function_id = 0;
-		r->colors.background = 0x000000;
+		r->colors.background = 0xFF000000;
 	}
 	r->resize = false;
 }
@@ -107,10 +128,12 @@ void	init_rv(t_game *r)
 	i = -1;
 	while (++i < r->rv_len)
 		r->rv[i] = i;
+	
+	//can try a second rv here that updated after and uses a fixed slot system instead of rolling
 	r->prev = 1;
 	r->obp = 0;
 	r->tbp = 2;
-
+	r->thbp = 1;
 }
 
 void	info_init(t_game *r)
@@ -118,34 +141,48 @@ void	info_init(t_game *r)
 	r->con_open = false;
 	r->on_con = false;
 	r->con->knob = 0;
-	r->con->base_d = sqrt(((r->width * r->width) + (r->height * r->height)) / 4);
-	//r->iters_change = 0;//for back compat
+	r->con->base_d = sqrt((double)(SQ(r->width) + SQ(r->height)) / 4);//dist to corner of screen
 	r->win_change_x = 1;
 	r->win_change_y = 1;
+
 	if (!r->god)
 	{
-		r->iters_change = 0;//just added can use in adjust window to simplify current... is num times iters key change ,1, 2 etc
+		r->iters_change = 0;//num times iters key change +- ,1, 2 etc, used for window resize, iters set
 		r->rotate = 0;
 		r->ratio_start = 0.5;
 		r->move_x = 0.0;
 		r->move_y = 0.0;
 		r->zoom = 1.0;
-		r->sides = 3;
 		r->dist_ratio = .5;
-		//height and width based params
-		r->r = r->height / 2 - r->height / 10;
-		r->iters = (r->r * r->zoom) * (r->r * r->zoom) * sqrt(3);//may adjust but seems good for now..iters = based on area of hexagon.//try generalizing all these to be area of shape
-		r->max_distance = r->con->base_d;//changed from width/2 to dist to corner.//hex area = (3*sqrt(3) /2) * r * r, A = (n/2) * r² * sin(360°/n).
+		r->r = r->height * .4;
+		//printf("R: %lu\n", r->r);
+		r->sides = 6;
+		r->area_factor = .25 * (double)r->sides * sin(2 * M_PI / (double)r->sides);//Area * (1 / 2), Area: Area(sides) = (sides / 2) * sin(2 * M_PI / sides) * r * r 
+
+		r->iters = (long)(SQ(r->r * r->zoom) * r->area_factor);
+		r->vert_dist = 1;
+		r->max_distance = r->con->base_d;
 	}
-	r->rv_len = 3;//change here and in header struct
-	r->con->max_d = r->max_distance;
+	
+	//stores starting maxd as base and maxd change
 	if (r->god && r->supersample)
 		r->start_maxd = r->con->base_d * r->s_kernel;
 	else
-		r->start_maxd = r->con->base_d;//these are really the same, just saves  one deref in color
+		r->start_maxd = r->con->base_d;
+
+	//these are correct
+	r->con->base_d *= r->vert_dist;
+	r->con->max_d = r->con->base_d;
+
+	r->rv_len = 3;//change here and in header struct
 	init_rv(r);
 	r->vertices2 = NULL;
 	r->ratio_change = r->dist_ratio / (2 - r->dist_ratio);
+	r->jump_to_center_col = 0;
+	r->jump_to_sides_col = false;
+	r->ghost2 = 0;
+	r->ghost = false;
+
 }
 
 void	r_init(t_game *r)
@@ -158,12 +195,25 @@ void	r_init(t_game *r)
 		r->rules[i] = 0;
 	r->disinfo_1 = false;
 	r->disinfo_2 = false;
-	
+}
+
+static inline void init_textures(t_game *r)
+{
+	r->texture = import_png(r->mlx_connect, "textures/copper1.png", &r->width_tex, &r->height_tex);
+	if (!r->texture)
+		clear_all(r);
 }
 
 void	game_init(t_game *r)
 {
 	r->con = NULL;
+	r->texture = NULL;
+	r->w_colors = NULL;
+	r->pixels_xl = NULL;
+
+	r->width_tex = 0;
+	r->height_tex = 0;
+
 	r->mlx_connect = mlx_init();
 	if (r->mlx_connect == NULL)
 		exit(EXIT_FAILURE);
@@ -184,5 +234,6 @@ void	game_init(t_game *r)
 	r->con = make_controls(r->mlx_connect);
 	if (!r->con)
 		clear_all(r);
+	init_textures(r);
 	info_init(r);
 }

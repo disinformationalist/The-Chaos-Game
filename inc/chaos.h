@@ -37,7 +37,22 @@
 # define TWO_PI 6.283185
 # define INV_E 0.36787944
 
-/* Interesting constants strictly in (0.5, φ) */
+# define ASPECT 1.7778
+# define DEFAULT_BUMP 30
+# define PI_HALVES 1.5708
+# define FIVE_PI_SIXTHS 2.618
+# define TWO_PI 6.283185
+# define FOUR_PI_THIRDS 4.1888
+# define TWO_PI_THIRDS 2.0944
+# define PI_SIXTHS 0.5236
+# define PI_FIFTHS 0.628319
+# define PI_12THS 0.2618
+# define THREE_OVER_2PI .477465
+# define RAD_TO_DEG 57.29578
+# define DEG_TO_RAD 0.0174533
+# define ITER_FACTOR 0.00001866063
+
+/* Interesting constants to try strictly in (0.5, φ) */
 
 # define INV_PHI                 0.6180339887498948  // 1/phi (golden ratio reciprocal)
 # define EULER_GAMMA             0.5772156649015329  // Euler–Mascheroni constant γ
@@ -70,50 +85,88 @@
 
 #define RULE(mask, n) (((mask) >> (n)) & 1)
 
-static inline int wrap_index(int i, int max) {
+static inline int wrap_index(int i, int max) 
+{
 	return (i + max) % max;
 }
 
 #define MAX_R 30
 
+typedef	struct s_knob
+{
+	t_img *img;
+
+	int		cx;
+	int		cy;
+	int		posx;
+	int		posy;
+
+	double	angle;
+	int 	w;
+	int 	h;
+
+} t_knob;
+
+typedef	struct s_knobs
+{
+	t_knob		posx;
+	t_knob		posy;
+	t_knob		rot;
+	t_knob		zoom;
+	t_knob		w_zoom;
+	t_knob		w_posx;
+	t_knob		w_posy;
+	t_knob		w_rot;
+	t_knob		iter;
+}	t_knobs;
+
 typedef struct s_control
 {
 	t_img		*color_con;
+	t_img		*nav;
+	t_img		*w_nav;
 	t_img		*r;
 	t_img		*g;
 	t_img		*b;
 	t_img		*s;
-	t_img		*ct;
+	t_knobs		knobs;
 
+	int			start_x;
+	int			start_y;
+	int			iters;
+
+	int 		nav_w;
+	int 		nav_h;
+
+	bool		nav_open;
+	bool		nav_w_open;
+
+	bool		on_nav;
+	bool		on_w_nav;
+	
 	int			m_height;//menu
 	int			m_width;
 
 	int			k_width;//knobs
 	int			k_height;
 
-	int			ct_height;//color track
-	int			ct_width;
-
 	int 		col_num;//4 cols
 
 	bool		dragging;
-	int			start_x;
-	int			start_y;
 	int			knob;
 
+	double		max_d;
+	double		vert_d;//god?
+	double		base_d;
+
+	double		old_zoom;
+	
+	//not used yet, button effect later
 	bool		pressed;
 	int			press_xs;
 	int			press_ys;
 	int			press_width;
 	int			press_height;
-
-	int			iters;
-	int			iters_i;
-	int			iters_j;
-
-	double		max_d;
-	double		base_d;
-	double		start_angle;//iter
 
 } t_control;
 
@@ -168,22 +221,26 @@ typedef bool (*rule_ft)(int v, const t_relations *rels);
 
 typedef struct s_game
 {
-	//uint32_t	rules_mask;
 	Xoro128		rng;
 	t_data		*data;
 	t_control 	*con;
 	bool		con_open;
 	bool		on_con;
-	t_3color	curr_col;
+	t_4color	curr_col;
 	double		start_maxd;
 	double		ratio_change;
 	int			**vertices2;
 	
 	rule_ft 	active[MAX_R + 1];
 	uint32_t	rules_mask;//rules mask
+
+	bool		ghost;//ghost center vert for color
 	int			prev;//prev vert ind
 	int			obp;//one before prev
 	int			tbp;//two before
+	int			thbp;//3 before
+
+	double		area_factor;
 
 
 //---included in god data----
@@ -193,25 +250,25 @@ typedef struct s_game
 	double		rotate;
 	double		zoom;
 	double		max_distance;
-	double		dist_ratio;///
-	double		ratio_start;///
+	double		dist_ratio;
+	double		ratio_start;
 	bool		rules[30];
 	bool		disinfo_1;
 	bool		disinfo_2;
 	bool		jump_to_sides;
-	bool		jump_to_center;////
+	bool		jump_to_center;
 	bool		mouse_zoom;
 	bool		supersample;
 	bool		layer;
 	bool		curved;
 	long		r;
-	long		iters;////
-	int			sides;///////
-	int			points;/////
-	int			center[2];/////
+	long		iters;
+	int			sides;
+	int			points;
+	int			center[2];
 	int			s_kernel;
-	int			width;/////
-	int			height;/////
+	int			width;
+	int			height;
 	int			mode;
 	int			function_id;
 	
@@ -223,6 +280,15 @@ typedef struct s_game
 	int 		col_shift_y;//from int
 	int 		col_shift_x;
 	int			iters_change;
+
+	double		vert_dist;
+//--------------------------------
+	int			jump_to_center_col;//add to god?
+	bool		jump_to_sides_col;//add to god?
+	int			ghost2;
+	t_img 		*texture;//make double circle list later //addgod
+	int			height_tex;//tex struct
+	int			width_tex;
 
 //----------not in god----------
 	bool		resize;
@@ -245,80 +311,81 @@ typedef struct s_game
 	int			height_orig;
 }		t_game;
 
-
-void	build_rules_active(const bool *rules, rule_ft active[MAX_R + 1]);
-int		set_and_check(int rv[], int v, long i, t_game *r);
-
-
-
-void		print_time(long start, long end, char *msg);
-void		convert_colors_to_cmyk_safe(t_colors *colors);
-void		cmyk_softproof_image(t_game *r, t_img *src, t_img *dst);
-
+typedef struct 
+{
+    int x;
+    int y;
+    int w;
+    int h;
+}	Rect;
 
 /****CHAOS UTILS****/
-
-void		intermed(t_game *r);
-void		information(t_game *r, int v, long i);
-int			r_loop(t_game *r, Xoro128 *rng);
-int			ft_r(int rv[], int v, long i, t_game *r);
-void		events_init(t_game *r);
-void		info_init(t_game *r);
-void		r_init(t_game *r);
-void		game_init(t_game *r);
-void		adjust_ratio(t_game *r, double new_ratio);
-
-void		polygon(int ***vertices, t_game *r);
-void		free_poly(int ***vertices, int i);
+void			render(t_game *r);
+void			information(t_game *r, int v, long i);
+int				r_loop(t_game *r, Xoro128 *rng);
+int				ft_r(int rv[], int v, long i, t_game *r);
+void			events_init(t_game *r);
+void			info_init(t_game *r);
+void			r_init(t_game *r);
+void			game_init(t_game *r);
+void			adjust_ratio(t_game *r, double new_ratio);
+int				set_and_check(int rv[], int v, long i, t_game *r);
+void			polygon(int ***vertices, t_game *r);
+void			free_poly(int ***vertices, int i);
+int				ft_round(double val);
 
 /*****GAMES*****/
-void		chaos_game(t_game *r, int **vertices, double x, double y);
-void		chaos_game_curved(t_game *r, int **vertices, double x, double y);
-void		chaos_game_apply_function(t_game *r, int **vertices, double x, double y);
-//void		chaos_game_curved_pro(t_game *r, int **vertices, double x, double y);
+void			chaos_game(t_game *r, int **vertices, double x, double y);
+void			chaos_game_curved(t_game *r, int **vertices, double x, double y);
+void			chaos_game_apply_function(t_game *r, int **vertices, double x, double y);
 
 /***COLORS***/
-void		color_option(t_game *r, int v, double x, double y, int **vertices);
-int			calc_color_4(double distance, double max_distance, t_colors *colors);
-void		put_pixel(int x, int y, t_game *r, unsigned int color);
-
-double		get_distance(double x1, double y1, double x2, double y2);
+void			color_option(t_game *r, int v, double x, double y, int **vertices);
+double			get_distance(double x1, double y1, double x2, double y2);
+unsigned int	map_color(t_img *from, t_game *r, int x, int y);
 
 /***HOOKS***/
-int			key_handler(int keysym, t_game *r);
-int			key_handler_r(int keysym, t_game *r);
-int			key_handler_other(int keysym, t_game *r);
-int			mouse_handler(int button, int x, int y, t_game *r);
-int			supersample_handler(int keysym, t_game *r);
+int				key_handler(int keysym, t_game *r);
+int				key_handler_r(int keysym, t_game *r);
+int				key_handler_other(int keysym, t_game *r);
+int				mouse_handler(int button, int x, int y, t_game *r);
+int				supersample_handler(int keysym, t_game *r);
 
-void		zoom_iters_key(int keysym, t_game *r);
-int			close_screen(t_game *r);
-void		set_supersampler_on(t_game *r);
-void		set_supersampler_off(t_game *r);
+void			zoom_iters_key(int keysym, t_game *r);
+int				close_screen(t_game *r);
+void			set_supersampler_on(t_game *r);
+void			set_supersampler_off(t_game *r);
 
-int			key_handler_rlayer(int keysym, t_game *r);
-int			key_handler_otherlayer(int keysym, t_game *r);
+int				key_handler_rlayer(int keysym, t_game *r);
+int				key_handler_otherlayer(int keysym, t_game *r);
 
-void		resize_window(t_game *r, int new_width, int new_height);
+void			resize_window(t_game *r, int new_width, int new_height);
+void			reset_iters(t_game *r);
+void			rotate(t_game *r, double angle);
+void			zoom_iters_mouse(int button, t_game *r);
+void			zoom_iters_mouse_move(t_game *r);
+void			set_home(t_game *r);
+
+
 
 	
 /***PRINT BOARD AND SET PNG DATA***/
-void		print_board(t_game *r);
-void		put_ratio(t_game *r);
-void		put_vals(t_game *r);
-void		put_bool(bool x);
-char		*mode_str(t_game *r);
-void		ft_putstr_c(char *s);
-void		ft_putstr_color(char *s, char *color);
-int 		get_numlen(long n);
-void		write_num_color(int num, char *color);
-png_text	*build_chaos_text(t_game *r);
-char		*serialize_game_data(t_game *game);
-char		*read_png_text_metadata(const char *filename);
-void		deserialize_game_data(t_game *r, const char *data);
+void			print_board(t_game *r);
+void			put_ratio(t_game *r);
+void			put_vals(t_game *r);
+void			put_bool(bool x);
+char			*mode_str(t_game *r);
+void			ft_putstr_c(char *s);
+void			ft_putstr_color(char *s, char *color);
+int 			get_numlen(long n);
+void			write_num_color(int num, char *color);
+png_text		*build_chaos_text(t_game *r);
+char			*serialize_game_data(t_game *game);
+char			*read_png_text_metadata(const char *filename);
+void			deserialize_game_data(t_game *r, const char *data);
 
 /***GUI CONTROLS***/
-void			free_controls(void *con, t_control *controls);
+void			destroy_controls(void *con, t_control *controls);
 t_control		*make_controls(void *m_con);
 void			set_controls(t_game *r);
 void			controls(t_game *r);
@@ -328,15 +395,26 @@ int				mouse_release(int button, int x, int y, t_game *game);
 unsigned int	pixel_color_get3(int x, int y, t_img *img);
 void			set_color_vals(void *mlx_con, void *mlx_win, t_game *game);
 
+void			set_nav(t_game *r);
+void			set_w_nav(t_game *r);
+void			set_nav_vals(void *mlx_con, void *mlx_win, t_game *game, int nav);
+void			check_nav_knobs(int x, int y, t_game *r, t_control *con);
+void			set_nav_knobs(t_game *r, t_control *con);
+int				check_top_buttons(t_game *r, int x, int y, t_control *con);
+
+void			set_color_con(t_game *r, t_control con);
+
+
 //void			reset_track(t_img *img, t_control control, int move_y);
 
-
-
-
-
+/***OTHER***/
+//void		build_rules_active(const bool *rules, rule_ft active[MAX_R + 1]);
+void			print_time(long start, long end, char *msg);
+void			convert_colors_to_cmyk_safe(t_colors *colors);
+void			cmyk_softproof_image(t_game *r, t_img *src, t_img *dst);
 
 /***CLEAN***/
-void		clear_all(t_game *r);
-void		free_poly(int ***vertices, int i);
+void			clear_all(t_game *r);
+void			free_poly(int ***vertices, int i);
 
 #endif

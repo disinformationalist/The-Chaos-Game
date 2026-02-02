@@ -5,7 +5,7 @@
 
 typedef struct s_pixel
 {
-//	uint8_t alpha;
+	uint8_t alpha;
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
@@ -13,7 +13,7 @@ typedef struct s_pixel
 
 typedef struct s_pixeld
 {
-	//double alpha;
+	double alpha;
 	double red;
 	double green;
 	double blue;
@@ -62,14 +62,21 @@ typedef struct s_filter
 	double			mean_r;
 	double			mean_g;
 	double			mean_b;
+	double			mean_t;
+
 
 	double			red;
 	double			green;
 	double			blue;
-	int				offset;
+	double			alpha;
+
+
 	int				avg_r;
 	int				avg_g;
 	int				avg_b;
+	int				avg_t;
+	
+	int				offset;
 	unsigned int	pixel;
 	double				**kernel;
 	int				factor;
@@ -84,6 +91,7 @@ typedef struct s_png_io
 	int			x;
 	int			pixel_size;
 	int			depth;
+	int			color_type;
 	t_pixel		temp_pixel;
 	png_byte	**row_pointers;
 	png_infop	info;
@@ -104,6 +112,23 @@ typedef struct s_wheel
 	float	b_;
 	int		hue;
 }				t_wheel;
+
+typedef enum e_pix_flags
+{
+    PIX_PALETTE = 1 << 0,   // 001
+    PIX_COLOR   = 1 << 1,   // 010 (RGB vs gray)
+    PIX_ALPHA   = 1 << 2    // 100
+} t_pix_flags;
+
+typedef enum s_pixel_format
+{
+    GRAY       = 0,                              // 000
+    RGB        = PIX_COLOR,                      // 010
+    PALETTE   = PIX_COLOR | PIX_PALETTE,        // 011
+    GRAY_A     = PIX_ALPHA,                      // 100
+    RGBA       = PIX_COLOR | PIX_ALPHA           // 110
+} t_pixel_format;
+
 
 typedef struct s_color// changed to uint8_t s from unsigned char
 {
@@ -132,7 +157,7 @@ typedef enum e_channel
 	GR = G | R,
 	BR = B | R,
 	BG = B | G,
-	RGB = R | G | B,
+	RGB1 = R | G | B,
 	RBG = R | B | G,
 	BGR = B | G | B,
 	BRG = B | R | G,
