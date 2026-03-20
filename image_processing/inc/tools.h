@@ -11,6 +11,7 @@ typedef struct s_pixel
 	uint8_t blue;
 }	t_pixel;
 
+
 typedef struct s_pixeld
 {
 	double alpha;
@@ -103,6 +104,13 @@ typedef struct s_png_io
 typedef struct s_wheel
 {
 	int		*colors;
+	double	freq;
+	double	spiral;
+	int		num_colors;
+	double	saturation;
+	double	lightness;
+	int		base_hue;
+	int		trans;
 	float	hue_step;
 	float	c;
 	float	x;

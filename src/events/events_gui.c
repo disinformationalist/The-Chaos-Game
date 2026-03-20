@@ -22,27 +22,49 @@ static inline void	set_drag(t_game *game, int x, int knob)
 	con->knob = knob;
 }
 
-static inline void	set_dial_knob(t_game *r, int knob)//TODO simplify like this in mrt also, store start when knobs set
+static inline void	set_dial_knob(t_game *r, int knob)
 {
 	r->con->dragging = true;
 	r->con->knob = knob;
 }
 
-int	check_knobs(int x, int y, t_game *game)
+
+int check_color_knobs(int x, int y, t_game *r)
 {
 	t_4color	color;
-	t_control	control = *game->con;
 	
-	color = game->curr_col;
-	//color
-	if (in_circle(x, y, 23 + color.r, 112, 8))
-		set_drag(game, x, 0);
-	else if (in_circle(x, y, 23 + color.g, 137, 8))
-		set_drag(game, x, 1);
-	else if (in_circle(x, y, 23 + color.b, 162, 8))
-		set_drag(game, x, 2);
-	else if (in_circle(x, y, 23 + color.t, 187, 8))
-		set_drag(game, x, 3);
+	color = r->curr_col;
+	if (r->color_op != 1)
+	{
+		if (in_circle(x, y, 23 + color.r, 112, 8))
+			return (set_drag(r, x, 0), 1);
+		else if (in_circle(x, y, 23 + color.g, 137, 8))
+			return (set_drag(r, x, 1), 1);
+		else if (in_circle(x, y, 23 + color.b, 162, 8))
+			return (set_drag(r, x, 2), 1);
+		else if (in_circle(x, y, 23 + color.t, 187, 8))
+			return (set_drag(r, x, 3), 1);
+	}
+	else 
+	{
+		if (in_circle(x, y, 150 + ft_round(r->wheel->saturation * 100), 112, 8))
+			return (set_drag(r, x, 14), 1);
+		else if (in_circle(x, y, 150 + ft_round(r->wheel->lightness * 100), 137, 8))
+			return (set_drag(r, x, 15), 1);
+		else if (in_circle(x, y, 23 + r->wheel->trans, 187, 8))
+			return (set_drag(r, x, 16), 1);
+	}
+	return 0;
+}
+
+
+
+int	check_knobs(int x, int y, t_game *game)
+{
+	t_control	control = *game->con;
+
+	if (check_color_knobs(x, y, game))
+		return (1);
 	else if (in_circle(x, y,  127 + (control.max_d - control.base_d) / (6 * control.base_d) * 144, 251, 8))//max_d
 		set_drag(game, x, 4);
 	else if (in_circle(x, y,  149 + control.vert_d * 100, 283, 8))//vert_d
@@ -108,42 +130,38 @@ static inline void	select_tab(int num, t_game *r, int tab, int val)
 	}
 }
 
+static inline void	set_knob_vals(t_knob *knob, double rad, double angle, double shift)
+{
+	knob->angle = angle;
+	angle += shift;
+	knob->posx = ft_round(rad * cos(angle)) + knob->cx;
+	knob->posy = knob->cy - ft_round(rad * sin(angle));
+}
+
 void	set_nav_knob_pos(t_game *r, t_control *con)
 {
-	double		angle, posx, posy, zoom;
+	double		posx, posy, zoom, sup;
 	int			desired_zoom = 3;
 
 	//set rot
-	angle = r->rotate;
-	con->knobs.rot.posx = ft_round(60 * cos(angle + PI_HALVES)) + con->knobs.rot.cx;
-	con->knobs.rot.posy = con->knobs.rot.cy - ft_round(60 * sin(angle + PI_HALVES));
-
+	set_knob_vals(&(con->knobs.rot), 60, r->rotate, PI_HALVES);
 	//set xy
 	posx = r->move_x;
 	posy = r->move_y;
 	if (r->supersample)
 	{
-		posx /= r->s_kernel;
-		posy /= r->s_kernel;
+		sup = 1 / r->s_kernel;
+		posx *= sup;
+		posy *= sup;
 	}
 	//becomes angle x, y
-	angle = fmod(posx, 360) * DEG_TO_RAD;//value % desired_len_of circumference * (2 * pi / desired_len)[conversion factor]
-	con->knobs.posx.angle = angle;
-	con->knobs.posx.posx = ft_round(60 * cos(angle + PI_HALVES)) + con->knobs.posx.cx;
-	con->knobs.posx.posy = con->knobs.posx.cy - ft_round(60 * sin(angle + PI_HALVES));
-
-	angle = fmod(posy, 360) * DEG_TO_RAD;
-	con->knobs.posy.angle = angle;
-	con->knobs.posy.posx = ft_round(60 * cos(angle + PI_HALVES)) + con->knobs.posy.cx;
-	con->knobs.posy.posy = con->knobs.posy.cy - ft_round(60 * sin(angle + PI_HALVES));
+	//angle = fmod(posx, 360) * DEG_TO_RAD;//value % desired_len_of circumference * (2 * pi / desired_len)[conversion factor]
+	set_knob_vals(&(con->knobs.posx), 60, fmod(posx, 360) * DEG_TO_RAD, PI_HALVES);
+	set_knob_vals(&(con->knobs.posy), 60, fmod(posy, 360) * DEG_TO_RAD, PI_HALVES);
 
 	//set the zoom, = 1 is the starting pos at the top.
 	zoom = r->zoom;
-	angle = fmod(zoom, desired_zoom) * (TWO_PI_THIRDS);
-
-	con->knobs.zoom.angle = angle;
-	con->knobs.zoom.posx = ft_round(161 * cos(angle - PI_SIXTHS)) + con->knobs.zoom.cx;
-	con->knobs.zoom.posy = con->knobs.zoom.cy - ft_round(161 * sin(angle - PI_SIXTHS));
+	set_knob_vals(&(con->knobs.zoom), 161, fmod(zoom, desired_zoom) * (TWO_PI_THIRDS), -PI_SIXTHS);
 }
 
 void	set_nav_knobs(t_game *r, t_control *con)
@@ -175,7 +193,7 @@ void	set_nav_knobs(t_game *r, t_control *con)
 		while (++i < con->k_width)
 		{
 			color = pixel_color_get3(i, j, con->r);
-			if (color != 0xFF202020)// change to greater than? check the imported knobs, ugly edge
+			if (color != 0xFF202020)
 				my_pixel_put(rotx + i, roty + j, &r->img, color);
 
 			color = pixel_color_get3(i, j, con->g);
@@ -223,41 +241,23 @@ void	set_nav(t_game *r)
 
 void	set_nav_w_knob_pos(t_game *r, t_control *con)
 {
-	double		rot, posx, posy, zoom, angle;
+	double		posx, posy, zoom, sup;
 	int			desired_zoom = 3;
-
-	//set rot
-	rot = (double)r->color_rot;
-	angle = fmod(rot, 360) * DEG_TO_RAD;
-	con->knobs.w_rot.angle = angle;
-	con->knobs.w_rot.posx = ft_round(60 * cos(angle + PI_HALVES)) + con->knobs.w_rot.cx;
-	con->knobs.w_rot.posy = con->knobs.w_rot.cy - ft_round(60 * sin(angle + PI_HALVES));
-
-	//set xy
+	
+	set_knob_vals(&(con->knobs.w_rot), 60, fmod((double)r->color_rot, 360) * DEG_TO_RAD, PI_HALVES);
 	posx = (double)r->col_shift_x;
 	posy = (double)r->col_shift_y;
 	if (r->supersample)
 	{
-		posx /= r->s_kernel;
-		posy /= r->s_kernel;
+		sup = 1 / r->s_kernel;
+		posx *= sup;
+		posy *= sup;
 	}
-	//becomes angle x, y
-	angle = fmod(posx, 360) * DEG_TO_RAD;
-	con->knobs.w_posx.angle = angle;
-	con->knobs.w_posx.posx = ft_round(60 * cos(angle + PI_HALVES)) + con->knobs.w_posx.cx;
-	con->knobs.w_posx.posy = con->knobs.w_posx.cy - ft_round(60 * sin(angle + PI_HALVES));
+	set_knob_vals(&(con->knobs.w_posx), 60, fmod(posx, 360) * DEG_TO_RAD, PI_HALVES);
+	set_knob_vals(&(con->knobs.w_posy), 60, fmod(posy, 360) * DEG_TO_RAD, PI_HALVES);
 
-	angle = fmod(posy, 360) * DEG_TO_RAD;
-	con->knobs.w_posy.angle = angle;
-	con->knobs.w_posy.posx = ft_round(60 * cos(angle + PI_HALVES)) + con->knobs.w_posy.cx;
-	con->knobs.w_posy.posy = con->knobs.w_posy.cy - ft_round(60 * sin(angle + PI_HALVES));
-
-	//set the zoom, = 1 is the starting pos at the top.
 	zoom = r->zoom;
-	angle = fmod(zoom, desired_zoom) * (TWO_PI_THIRDS);
-	con->knobs.zoom.angle = angle;
-	con->knobs.zoom.posx = ft_round(161 * cos(angle - PI_SIXTHS)) + con->knobs.zoom.cx;
-	con->knobs.zoom.posy = con->knobs.zoom.cy - ft_round(161 * sin(angle - PI_SIXTHS));
+	set_knob_vals(&(con->knobs.zoom), 161, fmod(zoom, desired_zoom) * (TWO_PI_THIRDS), -PI_SIXTHS);
 }
 
 void	set_nav_w_knobs(t_game *r, t_control *con)
@@ -404,8 +404,6 @@ int con_press(int x, int y, t_game *game, t_control *con)
 	else
 		check_knobs(x, y, game);
 	set_controls(game);
-	/* mlx_put_image_to_window(connect, win, game->img.img_ptr, 0, 0);
-	set_color_vals(connect, win, game); */
 	
 	return (0);
 }

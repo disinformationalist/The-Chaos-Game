@@ -29,7 +29,7 @@ void	set_pretext(png_text **text)
 	int	i;
 
 	i = -1;
-	while (++i < 33)
+	while (++i < 34)
 		(*text)[i].compression = PNG_TEXT_COMPRESSION_NONE;
 	(*text)[0].key = safe_ft_strdup("FRACTALS_BY_DISINFORMATIONALIST");
 	(*text)[0].text = safe_ft_strdup("+-------------------------------------------+");
@@ -124,7 +124,7 @@ void	set_bottom(png_text **text, t_game *r)
 	gcvt(r->move_x, 9, move_x);
 	gcvt(r->move_y, 9, move_y);
 
-	iters = ft_itoa(r->iters);//needs to be conveted from long use snprintf
+	iters = ft_itoa(r->iters);//todo: needs to be conveted from long use snprintf
 	sides = ft_itoa(r->sides);
 	s_kern = ft_itoa(r->s_kernel);
 
@@ -164,10 +164,17 @@ void	set_bottom(png_text **text, t_game *r)
 	//SET GOD MODE-----------
 	(*text)[31].key = safe_ft_strdup("GOD");
 	(*text)[31].text = serialize_game_data(r);
-	//------------------------
+	//SET WHEEL
+	(*text)[32].key = safe_ft_strdup("COLOR_WHEEL");
+	(*text)[32].text = serialize_wheel(r);
 
-	(*text)[32].key = safe_ft_strdup("NULL TERMINATION");
-	(*text)[32].text = NULL;
+	//ADDITIONAL COL INFO, GHOSTS ETC.
+	(*text)[33].key = safe_ft_strdup("OTHER_COLOR");
+	(*text)[33].text = serialize_other_color(r);
+
+	//needed by export, not printed into metadata, nor visible by import
+	(*text)[34].key = safe_ft_strdup("NULL TERMINATION");
+	(*text)[34].text = NULL;
 }
 
 void set_type(png_text **text, t_game *r)
@@ -202,7 +209,7 @@ png_text	*build_chaos_text(t_game *r)
 	char		*bool2;
 	char  		*str;
 
-	text = (png_text *)malloc(33 * sizeof(png_text));
+	text = (png_text *)malloc(35 * sizeof(png_text));
 	if (!text)
 	{
 		perror("png text malloc failure");
@@ -247,6 +254,5 @@ png_text	*build_chaos_text(t_game *r)
 	text[22].text = ft_strjoin_n(5, "|   TO CENTER: ", bool1, "      TO SIDES: ", bool2, "     |");
 	set_type(&text, r);
 	set_bottom(&text, r);
-
 	return (text);
 }

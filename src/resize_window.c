@@ -31,14 +31,16 @@ static void	pre_adjust_params(t_game *r, int new_width, int new_height)
 static void post_adjust_params(t_game *r)
 {
 	//ADJUST ALL H AND W PARAMS
-	r->r = r->height *.4;
-	r->iters = round(SQ((double)r->r * r->zoom) * r->area_factor * (1 + (double)r->iters / 4));
+	r->r = ft_round((double)r->height * .4);
+//	r->iters = round(SQ((double)r->r * r->zoom) * r->area_factor * (1 + (double)r->iters / 4));
+	reset_iters(r);
 	r->move_x *= (double)(r->width) / (15 * r->zoom);
 	r->move_y *= (double)(r->height) / (15 * r->zoom);
 	r->col_shift_x = ft_round((double)r->col_shift_x * ((double)r->height / 8));//needs super fix?
 	r->col_shift_y = ft_round((double)r->col_shift_y * ((double)r->height / 8));
 	printf("col s x: %d\n", r->col_shift_x);
 	r->resize = false;
+	r->rz = 1.0 / ((double)r->r * r->zoom);
 	r->win_change_x = 1;
 	r->win_change_y = 1;
 }

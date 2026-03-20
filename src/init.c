@@ -58,14 +58,21 @@
     -MOD-DISINFO_2 ==== DISINFORM RECENT VERTS 2 BACK
 	*/
 
+void	free_wheel(t_wheel *w)
+{
+	if (w->colors)
+		free(w->colors);
+	free(w);
+}
+
 void	clear_all(t_game *r)
 {
 	if (r->texture)
 		free(r->texture);
 	if (r->con)
 		destroy_controls(r->mlx_connect, r->con);
-	if (r->w_colors)
-		free(r->w_colors);
+	if (r->wheel)
+		free(r->wheel);
 	if (r->pixels_xl)
 		free_ui_matrix(r->pixels_xl, r->height_orig * r->s_kernel);
 	if (r->img.img_ptr)
@@ -97,8 +104,7 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 		r->colors.color_3 |= 0xFF000000;
 		r->colors.color_4 |= 0xFF000000;
 	}
-
-	if (!r->god)//must place these outside of this for backward compat.
+	if (!r->god)
 	{
 		r->colors = ORIGINAL;
 		r->color_depth = 0;
@@ -106,9 +112,6 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 		r->col_shift_x = 0;
 		r->col_shift_y = 0;
 		r->color_rot = 0;
-	}
-	if (!r->god)
-	{
 		r->mouse_zoom = 0;
 		r->layer = 0;
 		r->curved = 0;
@@ -136,6 +139,41 @@ void	init_rv(t_game *r)
 	r->thbp = 1;
 }
 
+void	init_wheel(t_game *r)
+{
+	r->wheel->num_colors = 360;
+	r->wheel->saturation = 1.0;
+	r->wheel->lightness = 0.5;
+	r->wheel->base_hue = 202;
+	r->wheel->trans = 255;
+	r->wheel->freq = 1.0;
+	r->wheel->spiral = 0;
+}
+
+void	init_not_god(t_game *r)
+{
+	r->iters_change = 0;//num times iters key change +- ,1, 2 etc, used for window resize, iters set
+	r->rotate = 0;
+	r->ratio_start = 0.5;
+	r->move_x = 0.0;
+	r->move_y = 0.0;
+	r->zoom = 1.0;
+	r->dist_ratio = .5;
+	r->r = ft_round((double)r->height * .4);
+	r->sides = 6;
+	//-----Area * (1 / 2), Area: Area(sides) = (sides / 2) * sin(2 * M_PI / sides) * r * r 
+	r->area_factor = .25 * (double)r->sides * sin(2 * M_PI / (double)r->sides);
+	r->iters = ft_round((long)(SQ(r->r * r->zoom) * r->area_factor));
+	r->vert_dist = 1;
+	r->max_distance = r->con->base_d;
+	init_wheel(r);
+
+	r->jump_to_center_col = 0;
+	r->jump_to_sides_col = 0;
+	r->ghost2 = 0;
+	
+}
+
 void	info_init(t_game *r)
 {
 	r->con_open = false;
@@ -144,45 +182,21 @@ void	info_init(t_game *r)
 	r->con->base_d = sqrt((double)(SQ(r->width) + SQ(r->height)) / 4);//dist to corner of screen
 	r->win_change_x = 1;
 	r->win_change_y = 1;
-
 	if (!r->god)
-	{
-		r->iters_change = 0;//num times iters key change +- ,1, 2 etc, used for window resize, iters set
-		r->rotate = 0;
-		r->ratio_start = 0.5;
-		r->move_x = 0.0;
-		r->move_y = 0.0;
-		r->zoom = 1.0;
-		r->dist_ratio = .5;
-		r->r = r->height * .4;
-		//printf("R: %lu\n", r->r);
-		r->sides = 6;
-		r->area_factor = .25 * (double)r->sides * sin(2 * M_PI / (double)r->sides);//Area * (1 / 2), Area: Area(sides) = (sides / 2) * sin(2 * M_PI / sides) * r * r 
-
-		r->iters = (long)(SQ(r->r * r->zoom) * r->area_factor);
-		r->vert_dist = 1;
-		r->max_distance = r->con->base_d;
-	}
+		init_not_god(r);
+	r->rz = 1.0 / ((double)r->r * r->zoom);
 	
 	//stores starting maxd as base and maxd change
-	if (r->god && r->supersample)
-		r->start_maxd = r->con->base_d * r->s_kernel;
-	else
-		r->start_maxd = r->con->base_d;
-
-	//these are correct
+	(r->god && r->supersample) ? (r->start_maxd = r->con->base_d * r->s_kernel) : (r->start_maxd = r->con->base_d);
 	r->con->base_d *= r->vert_dist;
 	r->con->max_d = r->con->base_d;
 
 	r->rv_len = 3;//change here and in header struct
 	init_rv(r);
-	r->vertices2 = NULL;
 	r->ratio_change = r->dist_ratio / (2 - r->dist_ratio);
-	r->jump_to_center_col = 0;
-	r->jump_to_sides_col = false;
-	r->ghost2 = 0;
+	
+	r->vertices2 = NULL;
 	r->ghost = false;
-
 }
 
 void	r_init(t_game *r)
@@ -199,21 +213,24 @@ void	r_init(t_game *r)
 
 static inline void init_textures(t_game *r)
 {
-	r->texture = import_png(r->mlx_connect, "textures/copper1.png", &r->width_tex, &r->height_tex);
+	r->texture = import_png(r->mlx_connect, "textures/marble3.png", &r->width_tex, &r->height_tex);
 	if (!r->texture)
 		clear_all(r);
 }
 
-void	game_init(t_game *r)
+static inline void init_nulls(t_game *r)
 {
 	r->con = NULL;
 	r->texture = NULL;
-	r->w_colors = NULL;
 	r->pixels_xl = NULL;
 
 	r->width_tex = 0;
 	r->height_tex = 0;
+}
 
+void	game_init(t_game *r)
+{
+	init_nulls(r);
 	r->mlx_connect = mlx_init();
 	if (r->mlx_connect == NULL)
 		exit(EXIT_FAILURE);

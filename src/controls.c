@@ -24,6 +24,8 @@ void	destroy_controls(void *con, t_control *controls)
 		destroy_img(controls->nav, con);
 	if (controls->w_nav)
 		destroy_img(controls->w_nav, con);
+	if (controls->w_tab)
+		destroy_img(controls->w_tab, con);
 	free(controls);
 }
 
@@ -36,6 +38,8 @@ void	null_init2(t_control *new)
 	
 	new->nav = NULL;
 	new->w_nav = NULL;
+	new->w_tab = NULL;
+
 
 	new->col_num = 1;
 	new->dragging = false;
@@ -62,6 +66,8 @@ t_knob		init_knob(t_img *png, int cx, int cy, int w, int h)
 	return (knob);
 }
 
+//knob objects for dial knobs only, not needed for straight knobs
+
 void		init_knobs(t_control *new, t_knobs *knobs)
 {
 	knobs->posx = init_knob(new->g, 122, 190, 8, 8);
@@ -83,7 +89,11 @@ t_control	*make_controls(void *m_con)
 	if (!new)
 		return (NULL);
 	null_init2(new);
-	
+
+	if (!(new->w_tab = import_png(m_con, \
+	"gui_imgs/w_tab.png", &new->colw_w, &new->colw_h)))
+		goto fail;
+
 	if (!(new->color_con = import_png(m_con, \
 	"gui_imgs/currcon.png", &new->m_width, &new->m_height)))
 		goto fail;

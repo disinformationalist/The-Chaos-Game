@@ -46,11 +46,11 @@ void	set_verts_sides_on(int ***vertices, t_game *r, double angle, double factor)
 
 	i = 0;
 	j = 0;
-	shift_angle = M_PI / 2 + r->rotate;
+	shift_angle = M_PI / 2 + r->rotate;//M_PI / 2  + rot
 	while (i < r->points - r->jump_to_center)//set verts
 	{
 		final_angle = angle * j - shift_angle;
-		(*vertices)[i][0] = r->width / 2 + (r->move_x + factor * r->r * cos(final_angle)) * r->zoom;
+		(*vertices)[i][0] = r->width / 2 + (r->move_x + factor * r->r * cos(final_angle)) * r->zoom ;
 		(*vertices)[i][1] = r->height / 2 + (factor * r->r * sin(final_angle) - r->move_y) * r->zoom;
 		i += 2;
 		j++;
@@ -76,13 +76,20 @@ void	set_verts(int ***vertices, t_game *r, double angle, double factor)
 	int		i;
 	double	final_angle;
 	double	shift_angle;
-	
+	/* int		xshift;
+	int		fact; */
+
+	//fact = 2;
 	i = -1;
-	shift_angle = M_PI / 2 + r->rotate;
+	shift_angle = M_PI / 2  + r->rotate;//M_PI / 2  + rot
 	while (++i < r->points - r->jump_to_center)
 	{
+		/* if (i >= 2 && i <= 4)
+			xshift = -r->r * fact * r->zoom;
+		else
+			xshift = r->r * fact * r->zoom; */
 		final_angle = angle * i - shift_angle;
-		(*vertices)[i][0] = r->width / 2 + (r->move_x + factor * r->r * cos(final_angle)) * r->zoom;
+		(*vertices)[i][0] = r->width / 2 + (r->move_x + factor * r->r * cos(final_angle)) * r->zoom;// + xshift;
 		(*vertices)[i][1] = r->height / 2 + (factor * r->r * sin(final_angle) - r->move_y) * r->zoom;
 	}
 	if (r->jump_to_center)// center currently stored in last when on

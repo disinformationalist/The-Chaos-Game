@@ -2,11 +2,7 @@
 #define XORO128_H
 
 #include <stdint.h>
-
-typedef struct {
-    uint64_t state[2];
-    uint64_t splitmix_seed;
-} Xoro128;
+#include <rng.h>
 
 // Rotate left
 static inline uint64_t rotl(const uint64_t x, int k) {
@@ -46,5 +42,5 @@ static inline double xoro128d(Xoro128* xoro) {
     return (xoro128(xoro) >> 11) * (1.0 / (1ULL << 53));
 }
 
-#endif // XORO128_H
 
+#endif // XORO128_H

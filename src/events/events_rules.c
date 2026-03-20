@@ -22,14 +22,9 @@ void	zoom_iters_key(int keysym, t_game *r)
 		r->zoom *= 3;
 	else if (keysym == DIV)
 		r->zoom /= 3;
-	rad_times_zoom = r->r * r->zoom;
-	
-	if (r->dist_ratio <= .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ(r->dist_ratio * rad_times_zoom) * r->area_factor;
-	else if (r->dist_ratio < 1.0 && r->dist_ratio > .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ((1 - r->dist_ratio) * rad_times_zoom) * r->area_factor;
-	else //(r->dist_ratio > 1)
-		r->iters = .5 * (8 + r->iters_change) * SQ(r->r * r->zoom * r->ratio_change * (r->dist_ratio - 1)) * r->area_factor;
+	rad_times_zoom = (double)r->r * r->zoom;
+	r->rz = 1 / rad_times_zoom;
+	reset_iters(r);
 	r->col_shift_x = ft_round((double)r->col_shift_x * r->zoom);
 	r->col_shift_y = ft_round((double)r->col_shift_y * r->zoom);
 }

@@ -126,7 +126,7 @@ extern const t_colors CANDY;
 extern const t_colors SLIME;
 extern const t_colors UNNAMED_1;
 extern const t_colors ORIGINAL;
-extern const t_colors NEBULA;
+extern const t_colors CELTIC;
 extern const t_colors ETERNAL_SPRING;
 
 extern const t_colors DUSK;

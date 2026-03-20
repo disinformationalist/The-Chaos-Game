@@ -45,8 +45,8 @@ int	close_screen(t_game *r)
 	}
 	if (r->con)
 		destroy_controls(r->mlx_connect, r->con);
-	if (r->w_colors)
-		free(r->w_colors);
+	if (r->wheel)
+		free(r->wheel);
 	mlx_destroy_image(r->mlx_connect, r->img.img_ptr);
 	mlx_destroy_image(r->mlx_connect, r->cmyk.img_ptr);
 	mlx_destroy_window(r->mlx_connect, r->mlx_win);
@@ -57,14 +57,15 @@ int	close_screen(t_game *r)
 
 static int	key_handler_3(int keysym, t_game *r)
 {
+	//double change_val = r->r * r->dist_ratio;
 	if (keysym == XK_Down)
-		r->move_y += (r->height / (15 * r->zoom));
+		r->move_y -= r->height_orig / (4 * r->zoom);//nav_arrow_change(r, -change_val , &r->move_y, floor, -1);//along radius
 	else if (keysym == XK_Left)
-		r->move_x += (r->height / (15 * r->zoom));
+		r->move_x -= r->width_orig / (4 * r->zoom);//nav_arrow_change(r, -ft_round(change_val * cos(M_PI / r->sides)), &r->move_x, floor, -1);//along apothem
 	else if (keysym == XK_Right)
-		r->move_x -= (r->height / (15 * r->zoom));
+		r->move_x += r->width_orig / (4 * r->zoom);//nav_arrow_change(r, ft_round(change_val * cos(M_PI / r->sides)) , &r->move_x, ceil, 1);//along apothem
 	else if (keysym == XK_Up)
-		r->move_y -= (r->height / (15 * r->zoom));
+		r->move_y += r->height_orig / (4 * r->zoom);//nav_arrow_change(r, change_val, &r->move_y, ceil, 1);//along radius
 	else if (keysym == PLUS) 
 	{
 		if (r->dist_ratio < 1.0 && r->dist_ratio > .5)
@@ -98,22 +99,22 @@ static int	key_handler_3(int keysym, t_game *r)
 static int	key_handler_3layer(int keysym, t_game *r)
 {
 	//double factor = 1.1;
-	int		shift = (int)((double)r->height / 8);
-
+	//int		shift = (int)((double)r->height / 8);
+	double change_val = r->r * r->dist_ratio * r->zoom * r->ratio_change;
 	if (keysym == XK_Up)
-		r->col_shift_y += shift;
+		w_nav_arrow_change(r, ft_round(change_val), &r->col_shift_y);//along rad
 	else if (keysym == XK_Down)
-		r->col_shift_y -= shift;
+		w_nav_arrow_change(r, -ft_round(change_val), &r->col_shift_y);//along rad
 	else if (keysym == XK_Left)
-		r->col_shift_x += shift;
+		w_nav_arrow_change(r, -ft_round(change_val * cos(M_PI / r->sides)), &r->col_shift_x);//along apothem
 	else if (keysym == XK_Right)
-		r->col_shift_x -= shift;
+		w_nav_arrow_change(r, ft_round(change_val * cos(M_PI / r->sides)), &r->col_shift_x);//along apothem
 	else if (keysym == PLUS)//maybe adjust these for width
 	{
 		r->ghost2++;
 		if (r->ghost2 > 1)
 			r->ghost2 = 0;
-		
+
 		/* r->resize = true;
 		r->win_change_x *= factor;
 		r->win_change_y *= factor; */
@@ -162,6 +163,7 @@ void adjust_ratio(t_game *r, double new_ratio)
 	
 	r->move_x *= (old_zoom / r->zoom);
 	r->move_y *= (old_zoom / r->zoom);
+	r->rz = 1.0 / ((double)r->r * r->zoom);
 	
 	reset_iters(r);
 }
@@ -294,12 +296,19 @@ static int	key_handler_2layer(int keysym, t_game *r)//need to make new iters adj
 			r->jump_to_center_col = 0;
 	}
 	else if (keysym == APOST)
-		r->jump_to_sides_col = !r->jump_to_sides_col;//ghost sides
+	{
+		//ghost sides
+		r->jump_to_sides_col++;
+		if (r->jump_to_sides_col > 1)
+			r->jump_to_sides_col = 0;
+	}
 	else
 		key_handler_3layer(keysym, r);
 	render(r);
 	return (0);
 }
+
+
 
 void	print_guide(void)//in prog
 {
@@ -424,18 +433,21 @@ int	key_handler(int keysym, t_game *r)//place things not to rerender upon keypre
 	else if (keysym == F3)
 	{
 		char		*name;
-		png_text	*text;
+		png_text	*text = NULL;
 		name = get_nxt_name("chaos_");
 		if (!name)
 			close_screen(r);
+	
 		text = build_chaos_text(r);
 		if (export_png(name, &r->img, r->width_orig, r->height_orig, text, RGBA) == -1)
 		{
 			free(name);
 			close_screen(r);
 		}
+		printf( BOLD_BRIGHT_MAGENTA"EXPORT "BOLD_GREEN);
+		printf("%s", name);
+		printf(BOLD_BRIGHT_MAGENTA" COMPLETE\n"RESET);
 		free(name);
-		ft_putstr_color("EXPORT COMPLETE\n", BOLD_BRIGHT_MAGENTA);
 	}
 	else if (keysym == XK_F11)
 	{

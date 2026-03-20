@@ -6,13 +6,9 @@ void	zoom_iters_mouse_move(t_game *r)
 	
 	r->col_shift_x = ft_round((double)r->col_shift_x / r->con->old_zoom);
 	r->col_shift_y = ft_round((double)r->col_shift_y / r->con->old_zoom);
-	rad_times_zoom = r->r * r->zoom;
-	if (r->dist_ratio <= .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ(r->dist_ratio * rad_times_zoom) * r->area_factor;
-	else if (r->dist_ratio < 1.0 && r->dist_ratio > .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ((1 - r->dist_ratio) * rad_times_zoom) * r->area_factor;
-	else //(r->dist_ratio > 1)
-		r->iters = .5 * (8 + r->iters_change) * SQ(rad_times_zoom * r->ratio_change * (r->dist_ratio - 1)) * r->area_factor;
+	rad_times_zoom = (double)r->r * r->zoom;
+	r->rz = 1 / rad_times_zoom;
+	reset_iters(r);
 	r->col_shift_x = ft_round((double)r->col_shift_x * r->zoom);
 	r->col_shift_y = ft_round((double)r->col_shift_y * r->zoom);
 }
@@ -75,6 +71,35 @@ void	reset_track(t_game *r, t_control *con, t_img *panel, t_img *knob, int x1, i
 		i = Union.x - 1;
 		while (++i < Union.x + Union.w)
 			my_pixel_put(i , j,  &r->img, pixel_color_get3(i , j , panel));
+	}
+	//redraw at new pos
+	draw_knob(r, con, knob, x2, y2);
+	mlx_put_image_to_window(r->mlx_connect, r->mlx_win, r->img.img_ptr, 0, 0);
+}
+
+void	reset_wtrack(t_game *r, t_control *con, t_img *panel, t_img *knob, int x1, int y1, int x2, int y2)
+{
+	int i, j;
+	Rect a, b;
+
+	//start knob pos
+	a.x = x1;
+	a.y = y1;
+	a.w = 17;
+	a.h = 17;
+	//end knob pos
+	b.x = x2;
+	b.y = y2;
+	b.w = 17;
+	b.h = 17;
+
+	Rect Union = rect_union(a, b);
+	j = Union.y - 1;
+	while (++j < Union.y + Union.h)
+	{
+		i = Union.x - 1;
+		while (++i < Union.x + Union.w)
+			my_pixel_put(i , j,  &r->img, pixel_color_get3(i - 6, j - 70, panel));
 	}
 	//redraw at new pos
 	draw_knob(r, con, knob, x2, y2);
@@ -213,8 +238,8 @@ static inline void		adjust_nav(t_game *game, int knob, int x, int y, double delt
 	{
 		delta_angle = get_delta_angle(239 - y, x - 200, con->knobs.zoom.angle);
 		con->old_zoom = game->zoom;
-		zoom_iters_mouse_move(game);
 		game->zoom += (delta_angle + PI_SIXTHS) * THREE_OVER_2PI;
+		zoom_iters_mouse_move(game);
 		con->knobs.zoom = update_dial_knob(game, con, con->nav, con->knobs.zoom, game->zoom, 2, 161, -PI_SIXTHS);
 	}
 	set_nav_vals(mlx, win, game, 0);
@@ -294,6 +319,40 @@ int mouse_move(int x, int y, t_game *game)
 			new = ft_round(new_val);
 			set_color_chan(&game->colors, &game->curr_col, con->col_num, con->knob, new);
 			reset_track(game, con, con->color_con, k_img, current_knob_pos, yval, new + 14, yval);
+		}
+		else if (knob >= 14 && knob < 17)
+		{
+			int		sval;
+			t_wheel *w = game->wheel;
+
+			k_img = con->s;
+			if (knob == 14)
+				old = 141 + ft_round(game->wheel->saturation * 100), yval = 103, sval = 141;
+			else if (knob == 15)
+				old = 141 + ft_round(game->wheel->lightness * 100), yval = 128, sval = 141;
+			else if (knob == 16)
+			{
+				old = 14 + w->trans, yval = 178, sval = 14;
+				new_val = move_knob(14, 269, old, delta_x);		
+			}
+			if (knob != 16)
+				new_val = move_knob(149, 249, old + 8, delta_x);
+			new = ft_round(new_val);
+			if (knob == 14)
+			{
+				game->wheel->saturation = new_val * .01;
+				reset_wtrack(game, con, con->w_tab, k_img, old, yval, new + sval, yval);
+			}
+			else if (knob == 15)
+			{
+				game->wheel->lightness = new_val * .01;
+				reset_wtrack(game, con, con->w_tab, k_img, old, yval, new + sval, yval);
+			}
+			else if (knob == 16)
+			{
+				game->wheel->trans = new_val;
+				reset_track(game, con, con->color_con, k_img, old, yval, new + sval, yval);
+			}
 		}
 		else if (knob == 4)//max_d
 		{

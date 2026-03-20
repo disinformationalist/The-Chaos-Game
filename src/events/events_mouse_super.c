@@ -22,14 +22,9 @@ void	zoom_iters_mouse(int button, t_game *r)
 		r->zoom *= 1.1;
 	else if (button == MOUSE_BACK)
 		r->zoom /= 1.1;
-	rad_times_zoom = r->r * r->zoom;
-
-	if (r->dist_ratio <= .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ(r->dist_ratio * rad_times_zoom) * r->area_factor;
-	else if (r->dist_ratio < 1.0 && r->dist_ratio > .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ((1 - r->dist_ratio) * rad_times_zoom) * r->area_factor;
-	else //(r->dist_ratio > 1)
-		r->iters = .5 * (8 + r->iters_change) * SQ(rad_times_zoom * r->ratio_change * (r->dist_ratio - 1)) * r->area_factor;
+	rad_times_zoom = (double)r->r * r->zoom;
+	r->rz = 1 / rad_times_zoom;
+	reset_iters(r);
 	r->col_shift_x = ft_round((double)r->col_shift_x * r->zoom);
 	r->col_shift_y = ft_round((double)r->col_shift_y * r->zoom);
 }
@@ -105,8 +100,12 @@ double round_to_mag(double angle, double (*ft_r)(double val), double mag)
 	return (ft_r(angle / mag) * mag);
 }
 
+
 void	nav_arrow_change(t_game *r, double mag, double *to_change, double (*ft_r)(double val), int sign)
 {
+	double larger;
+	r->width > r->height? (larger = r->width) : (larger = r->height);
+	mag *= pow(.5, round(r->zoom / 2) + ft_round((double)r->r / larger));
 	double curr = *to_change;
 	double change = (round_to_mag(curr, ft_r, sign * mag) - curr);
 	if (fabs(change) <= 1e-5)
@@ -129,11 +128,16 @@ void	rot_arrow_change(t_game *r, double (*ft_r)(double val), double sign)
 
 void	zoom_arrow_change(t_game *r, double (*ft_r)(double val), double sign)
 {
+	double mag = 1;
+	double larger;
+	r->width > r->height? (larger = r->width) : (larger = r->height);
+	mag *= pow(.5, round(r->zoom / 2) + ft_round((double)r->r / larger)) * .05;
 	double curr = r->zoom;
-	double change = round_to_mag(curr, ft_r, .05) - curr;
+	double change = round_to_mag(curr, ft_r, mag) - curr;
 	if (fabs(change) <= 1e-5)
-		change = sign * .05;
+		change = sign * mag;
 	r->zoom += change;
+	r->rz = 1.0 / ((double)r->r * r->zoom);
 	zoom_iters_mouse_move(r);
 	render(r);
 }
@@ -148,30 +152,17 @@ void	nav_press(int x, int y, t_game *r, t_control *con)
 	if (check_top_buttons(r, x, y, con))
 		return ;
 	//other buttons here
-	double change_val = r->r * r->dist_ratio * .5;//fractional MAG VAL
+	double change_val = r->r * r->dist_ratio;//fractional MAG VAL
 	if ((x >= 121 && x < 141) && (y >= 164 && y < 184))
-	{
-	//	arrow_change(r, r->r * r->dist_ratio * .5, &r->move_x);//along rad
 		nav_arrow_change(r, ft_round( change_val * cos(M_PI / r->sides)) , &r->move_x, ceil, 1);//along apothem
-	}
 	else if ((x >= 121 && x < 141) && (y >= 214 && y < 234))
-	{
 		nav_arrow_change(r, -ft_round( change_val * cos(M_PI / r->sides)), &r->move_x, floor, -1);//along apothem
-	}
 	else if ((x >= 259 && x < 279) && (y >= 164 && y < 184))
-	{
 		nav_arrow_change(r, change_val, &r->move_y, ceil, 1);//along radius
-	}
 	else if ((x >= 259 && x < 279) && (y >= 214 && y < 234))
-	{
 		nav_arrow_change(r, -change_val , &r->move_y, floor, -1);//along radius
-		//printf("on arrow\n");
-	}
 	else if ((x >= 184 && x < 216) && (y >= 110 && y < 137))
-	{
-		set_home(r);
-		render(r);	
-	}
+		set_home(r), render(r);	
 	else if ((x >= 190 && x < 210) && (y >= 285 && y < 305))//rot
 		rot_arrow_change(r, ceil, 1);
 	else if ((x >= 190 && x < 210) && (y >= 335 && y < 355))
@@ -183,8 +174,12 @@ void	nav_press(int x, int y, t_game *r, t_control *con)
 	check_nav_knobs(x, y, r, con);
 }
 
-void	w_nav_arrow_change(t_game *r, int val, int *to_change)
+void	w_nav_arrow_change(t_game *r, double val, int *to_change)
 {
+	double larger;
+	r->width > r->height? (larger = r->width) : (larger = r->height);
+	val *= pow(.5, round(r->zoom / 2) + ft_round((double)r->r / larger));
+	val = floor(val);
 	*to_change -= val;
 	render(r);
 }
@@ -207,32 +202,22 @@ void	set_home_w(t_game *r)
 	render(r);
 }
 
+
+
 void	w_nav_press(int x, int y, t_game *r, t_control *con)
 {
-	//printf("here\n");
-
 	con->on_w_nav = true;
 	if (check_top_buttons(r, x, y, con))
 		return ;
-	double change_val = r->r * r->dist_ratio * .5 * r->zoom;
+	double change_val = r->r * r->dist_ratio * r->zoom * r->ratio_change;
 	if ((x >= 121 && x < 141) && (y >= 164 && y < 184))
-	{
-	//	arrow_change(r, r->r * r->dist_ratio * .5, &r->move_x);//along rad
-		w_nav_arrow_change(r, ft_round( change_val * cos(M_PI / r->sides)), &r->col_shift_x);//along apothem
-	}
+		w_nav_arrow_change(r, ft_round(change_val * cos(M_PI / r->sides)), &r->col_shift_x);//along apothem
 	else if ((x >= 121 && x < 141) && (y >= 214 && y < 234))
-	{
-	//	arrow_change(r, -r->r * r->dist_ratio * .5, &r->move_x);
 		w_nav_arrow_change(r, -ft_round(change_val * cos(M_PI / r->sides)), &r->col_shift_x);//along apothem
-	}
 	else if ((x >= 259 && x < 279) && (y >= 164 && y < 184))
-	{
 		w_nav_arrow_change(r, ft_round(change_val), &r->col_shift_y);//along rad
-	}
 	else if ((x >= 259 && x < 279) && (y >= 214 && y < 234))
-	{
 		w_nav_arrow_change(r, -ft_round(change_val), &r->col_shift_y);//along rad
-	}
 	else if ((x >= 184 && x < 216) && (y >= 110 && y < 137))
 		set_home_w(r);
 	else if ((x >= 190 && x < 210) && (y >= 285 && y < 305))//rot
@@ -319,10 +304,13 @@ int	mouse_handler(int button, int x, int y, t_game *r)
 
 void	set_supersampler_off(t_game *r)
 {
-	r->iters /= SQ(r->s_kernel);
 	r->width = r->width_orig;
 	r->height = r->height_orig;
-	r->r = r->height * .4;
+	r->r = ft_round((double)r->height * .4);
+	reset_iters(r);
+//	r->r = sqrt((double)(SQ(r->width) + SQ(r->height)) / 4);//FOR CORNER
+
+	r->rz = 1.0 / ((double)r->r * r->zoom);
 	r->max_distance /= r->s_kernel;
 	r->start_maxd /= r->s_kernel;
 	r->move_x /= r->s_kernel;
@@ -336,7 +324,10 @@ void	set_supersampler_on(t_game *r)
 	r->width *= r->s_kernel;
 	r->height *= r->s_kernel;
 	r->iters *= SQ(r->s_kernel);
-	r->r = r->height * .4;
+	r->r = ft_round((double)r->height * .4);
+	//r->r = sqrt((double)(SQ(r->width) + SQ(r->height)) / 4);
+
+	r->rz = 1.0 / ((double)r->r * r->zoom);
 	r->max_distance *= r->s_kernel;
 	r->start_maxd *= r->s_kernel;
 	r->move_x *= r->s_kernel;

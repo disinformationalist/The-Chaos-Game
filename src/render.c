@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "chaos.h"
+#include "xoro128.h"
 
 //sets background color for the super image
 
@@ -28,6 +29,38 @@ static inline void	set_ui_matrix(unsigned int **pixels_xl, int width, int height
 	}
 }
 
+static inline void	set_ui_matrix_tx(unsigned int **pixels_xl, int width, int height, t_game *r, t_img *tx)
+{
+	double fact_w = (double)r->width_tex / (double)r->width_orig;
+	double fact_h =  (double)r->height_tex / (double)r->height_orig;
+	if (fact_w == 0)
+		fact_w += 1.0;
+	if (fact_h == 0)
+		fact_h += 1.0;
+	int j;
+	int i;
+	unsigned int back;
+	unsigned int color;
+	back = r->colors.background;
+	back >>= 24;
+	back <<= 24;
+	
+	j = -1;
+	while (++j < height)
+	{
+		i = -1;
+		while (++i < width)
+		{
+			color = map_color(tx, r, ft_round((double)i * fact_w), ft_round((double)j * fact_h));
+			/* if (i < width / 2 || j > height / 2)
+				color = (color & 0x00FFFFFF) | 0x00000000;
+			else */
+				color = (color & 0x00FFFFFF) | back;
+			pixels_xl[j][i] = color; 
+		}
+	}
+}
+
 //convert rule set to mask for faster checks
 
 static inline uint32_t rules_to_mask(const bool *rules) 
@@ -37,6 +70,70 @@ static inline uint32_t rules_to_mask(const bool *rules)
 		if (rules[i]) m |= (1u << i);
     return m;
 }
+
+
+
+static inline void	set_background_texture(t_game *r, t_img *tx)
+{
+	int	j;
+	int	i;
+	double fact_w = (double)r->width_tex / (double)r->width_orig;
+	double fact_h =  (double)r->height_tex / (double)r->height_orig;
+	if (fact_w == 0)
+		fact_w += 1.0;
+	if (fact_h == 0)
+		fact_h += 1.0;
+	unsigned int color;
+	unsigned int back;
+	back = r->colors.background;
+	back >>= 24;
+	back <<= 24;
+
+	if (!r->supersample)
+	{
+		j = -1;
+		while(++j < r->height)
+		{
+			i = -1;
+			while (++i < r->width)
+			{
+				color =	map_color(tx, r, ft_round((double)i * fact_w), ft_round((double)j * fact_h));
+				color = (color & 0x00FFFFFF) | back;
+				my_pixel_put(i, j, &r->img, color);
+			}
+		}
+	}
+}
+
+
+
+/* static inline void set_background_texture(t_game *r, t_img *tx)
+{
+    int j, i;
+    unsigned int back = r->colors.background & 0xFF000000; // AARRGGBB assumed
+
+    if (!r->supersample)
+    {
+        for (j = 0; j < r->height; j++)
+        {
+            // map destination y -> source y
+            int sy = (int)((long long)j * (double)r->height_tex / (double)r->height);
+            sy = clampi(sy, 0, r->height_tex - 1);
+
+            for (i = 0; i < r->width; i++)
+            {
+                int sx = (int)((long long)i * (double)r->width_tex / (double)r->width);
+                sx = clampi(sx, 0, r->width_tex - 1);
+
+                unsigned int color = map_color(tx, r, sx, sy);
+                color = (color & 0x00FFFFFF) | back; // force alpha if you really want that
+                my_pixel_put(i, j, &r->img, color);
+            }
+        }
+    }
+} */
+
+
 
 //fill background color directly..
 
@@ -61,6 +158,8 @@ static inline void	set_background_color(t_game *r, unsigned int background)
 
 static inline void	render_init(t_game *r, int ***vertices, double *x, double *y)//CONSIDER MOVIN POLYGON HERE FOR MULIT THREAD...
 {	
+	bool use_tx = 0;//TEMP TURN ON BACKGROUND TX
+	
 	if (r->resize)//maybe change to cycle through desired presets.
 		resize_window(r, (int)((double)r->width_orig * r->win_change_x), (int)((double)r->height_orig * r->win_change_x));
 	if (r->supersample)
@@ -71,7 +170,10 @@ static inline void	render_init(t_game *r, int ***vertices, double *x, double *y)
 			printf(RED"The super malloc has failed\n"RESET);
 			close_screen(r);
 		}
-		set_ui_matrix(r->pixels_xl, r->width, r->height, r->colors.background);
+		if (!use_tx)
+			set_ui_matrix(r->pixels_xl, r->width, r->height, r->colors.background);
+		else
+			set_ui_matrix_tx(r->pixels_xl, r->width, r->height, r, r->texture);
 	}
 	if (r->jump_to_sides)
 		r->points = r->sides * 2;
@@ -79,10 +181,9 @@ static inline void	render_init(t_game *r, int ***vertices, double *x, double *y)
 		r->points = r->sides;
 	if (r->jump_to_center)
 		r->points++;
-	r->w_colors = set_color_wheel(360, 1.0, 0.5, 202);
-	//r->w_colors = set_color_wheel(r->points * 50, 1.0, 0.5, 0xFF00FF);
 
-	if (!r->w_colors)
+
+	if (!set_color_wheel(r->wheel))//360, 1.0, 0.5, 202);//num, slbt
 		clear_all(r);
 	*x = r->width / 2 + r->move_x;
 	*y = r->height / 2 - r->move_y; 
@@ -94,7 +195,11 @@ static inline void	render_init(t_game *r, int ***vertices, double *x, double *y)
 
 	r->rules_mask = rules_to_mask(r->rules);
 	//convert_colors_to_cmyk_safe(&r->colors);//uses only cmyk, not black
-	set_background_color(r, r->colors.background);//no good with memset does gscale
+	if (!use_tx)
+		set_background_color(r, r->colors.background);//no good with memset does gscale
+	else//build frac onto a texture
+		set_background_texture(r, r->texture);
+		
 }
 
 static inline void	reset_img_memory(t_game *r)
@@ -132,8 +237,8 @@ static inline void	end_render(t_game *r)
 		ft_putstr_color("...SUPERSAMPLE COMPLETE\n", BOLD_BRIGHT_BLUE);
 		
 	}
-	free(r->w_colors);
-	r->w_colors = NULL;	
+	if (r->wheel)
+		free(r->wheel->colors);
 	// set the cmyk version img to switch between
 	cmyk_softproof_image(r, &r->img, &r->cmyk);
 	if (r->con_open)

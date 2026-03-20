@@ -219,7 +219,7 @@ static void	filter_section_xl(t_img *img, unsigned int **pixels_xl, int kern_siz
 		while (++f->i < kern_size)
 		{	
 			f->pixel = pixels_xl[f->y + f->j][f->x + f->i];
-			f->alpha += (f->pixel >> 24);
+			f->alpha += (f->pixel >> 24) & 0xFF;
 			f->red += (f->pixel >> 16) & 0xFF;
 			f->green += (f->pixel >> 8) & 0xFF;
 			f->blue += f->pixel & 0xFF;
@@ -247,41 +247,36 @@ static void	filter_section_xl(t_img *img, unsigned int **pixels_xl, int kern_siz
         f->i = -1;
         while (++f->i < kern_size)
         {
-            unsigned int px = pixels_xl[f->y + f->j][f->x + f->i];
+           unsigned int px = pixels_xl[f->y + f->j][f->x + f->i];
 
-            uint32_t a = (px >> 24);
-            uint32_t r = (px >> 16) & 0xFF;
-            uint32_t g = (px >>  8) & 0xFF;
-            uint32_t b = px & 0xFF;
+			uint32_t a = (px >> 24) & 0xFF;
+			uint32_t r = (px >> 16) & 0xFF;
+			uint32_t g = (px >>  8) & 0xFF;
+			uint32_t b = (px) & 0xFF;
 
-            sumA  += a;
-            sumRA += (uint64_t)r * a;
-            sumGA += (uint64_t)g * a;
-            sumBA += (uint64_t)b * a;
+			sumA  += a;
+			sumRA += (uint64_t)r * a;
+			sumGA += (uint64_t)g * a;
+			sumBA += (uint64_t)b * a;
         }
     }
 
     // Average alpha (0..255)
-    uint32_t avgA = (uint32_t)((sumA + (N/2)) / (uint64_t)N);
+	uint32_t avgA = (uint32_t)((sumA + (N / 2)) / (uint64_t)N);
 
-    uint32_t outR = 0, outG = 0, outB = 0;
+    
+	uint32_t outR = 0, outG = 0, outB = 0;
+	if (sumA != 0)
+	{
+	    // alpha-weighted average of straight RGB
+	    outR = (uint32_t)((sumRA + (sumA / 2)) / sumA);
+	    outG = (uint32_t)((sumGA + (sumA / 2)) / sumA);
+	    outB = (uint32_t)((sumBA + (sumA / 2)) / sumA);
 
-    if (sumA != 0)
-    {
-        // Compute average premultiplied channels: (sum(R*A)/N)
-        // Then unpremultiply by avgA:
-        //
-        // outR = ( (sumRA/N) * 255 ) / (sumA/N)  == (sumRA * 255) / sumA
-        //
-        // Use rounding:
-        outR = (uint32_t)((sumRA + (sumA/2)) / sumA);
-        outG = (uint32_t)((sumGA + (sumA/2)) / sumA);
-        outB = (uint32_t)((sumBA + (sumA/2)) / sumA);
-
-        if (outR > 255) outR = 255;
-        if (outG > 255) outG = 255;
-        if (outB > 255) outB = 255;
-    }
+  		if (outR > 255) outR = 255;
+   		if (outG > 255) outG = 255;
+    	if (outB > 255) outB = 255;
+	}
     my_pixel_put(f->pix_x, f->pix_y, img,
         ((avgA << 24) | (outR << 16) | (outG << 8) | outB));
 } */

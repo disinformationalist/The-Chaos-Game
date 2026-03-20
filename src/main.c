@@ -1,8 +1,18 @@
 #include "chaos.h"
 
+void free_char_mat(char **mat)
+{
+	int i;
+
+	i = -1;
+	while (mat[++i])
+		free(mat[i]);
+	free(mat);
+}
+
 static void	init_god(t_game *r, char **av)
 {
-	char	*god;
+	char	**god;
 	
 	/* if (strncmp(av[1], "chaos", 5))//see below, change this.
 	{
@@ -17,7 +27,8 @@ static void	init_god(t_game *r, char **av)
 	r->god = true;
 	god = read_png_text_metadata(av[1]);
 	deserialize_game_data(r, god);
-	free(god);
+	free_char_mat(god);
+
 	r->area_factor = .25 * (double)r->sides * sin(2 * M_PI / (double)r->sides);
 }
 
@@ -25,7 +36,7 @@ static void	init_god(t_game *r, char **av)
 
 static void	init_god2(t_game *r, char **av)
 {
-	char	*god;
+	char	**god;
 	
 	/* if (strncmp(av[3], "chaos", 5))//change this, get rid of and use a metadata check instead.
 	{
@@ -41,7 +52,7 @@ static void	init_god2(t_game *r, char **av)
 	r->god = true;
 	god = read_png_text_metadata(av[3]);
 	deserialize_game_data(r, god);
-	free(god);
+	free_char_mat(god);
 
 	r->area_factor = .25 * (double)r->sides * sin(2 * M_PI / (double)r->sides);
 
@@ -60,19 +71,13 @@ static void	init_god2(t_game *r, char **av)
 	double new_hyp = sqrt((double)(SQ(r->width) + SQ(r->height)) * .25);
 	r->max_distance = (new_hyp / old_hyp) * r->max_distance;
 	r->start_maxd = new_hyp;
-	//r->start_maxd = (new_hyp / old_hyp) * r->start_maxd;
 
 	r->col_shift_x = ft_round((double)r->col_shift_x * ((double)r->height * .125));
 	r->col_shift_y = ft_round((double)r->col_shift_y * ((double)r->height * .125));
 	r->move_x *= (double)(r->width) / (15 * r->zoom);
 	r->move_y *= (double)(r->height) / (15 * r->zoom);
-	double incs = round(4 * ((double)r->iters / ((SQ((double)r->r * r->zoom) * r->area_factor) - 1)));
-	
-	r->r = r->height * .4;
-	r->iters = (long)(round(SQ((double)r->r * r->zoom) * r->area_factor * (1 + incs * .25)));
-	if (r->supersample)
-		r->iters *= SQ(r->s_kernel);
-
+	r->r = ft_round((double)r->height * .4);
+	reset_iters(r);
 }
 
 static void	not_god(t_game *r, int ac, char **av)
@@ -101,6 +106,10 @@ int	main(int ac, char **av)
 
 	//printf("the number of cores: %d\n", get_num_cores());
 	
+	r.wheel = (t_wheel *)malloc(sizeof(t_wheel));
+	if (!r.wheel)
+		clear_all(&r);
+	r.wheel->colors = NULL;
 	if (ac == 2)
 	{
 		init_god(&r, av);

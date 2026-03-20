@@ -41,6 +41,8 @@ typedef struct s_img
 	int		bpp;
 	int		endian;
 	int		line_len;
+	int		w;
+	int		h;
 }	t_img;
 
 t_img			*nlm_rouselle_vars(void *mlx_ptr, t_img *img, int width, int height, int patch_size);//testing
@@ -88,7 +90,7 @@ t_img			*img_cpy(t_img *dest, t_img *src, int width, int height);
 t_img			*img_dup(void *mlx_ptr, t_img *img, int width, int height);
 
 /***COLORS***/
-int				*set_color_wheel(int num_colors, double saturation, double lightness, int base_hue);
+t_wheel			*set_color_wheel(t_wheel *co);
 unsigned int	get_color_source(double x, double y, int *colors, int num_colors, int rot, double freq);
 unsigned int	interpolate_two_colors(int color1, int color2, double t);
 unsigned int	get_color_source_spiral(double x, double y, int *colors, int num_colors, int rot, double spiral_strength);

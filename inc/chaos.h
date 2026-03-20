@@ -13,11 +13,12 @@
 #ifndef CHAOS_H
 #define CHAOS_H
 
+
 # include <unistd.h>
 # include "../minilibx-linux/mlx.h"
 # include "ansi_colors.h"///
 # include "keyboard.h"///-----------shouldnt need these two but its not working.
-# include "xoro128.h"
+# include "rng.h"
 # include <stdio.h>
 # include <math.h>
 # include <stdlib.h>
@@ -54,7 +55,9 @@
 
 /* Interesting constants to try strictly in (0.5, φ) */
 
-# define INV_PHI                 0.6180339887498948  // 1/phi (golden ratio reciprocal)
+# define INV_PHI                 0.6180339887498948  // 1/phi (golden ratio reciprocal) = (phi - 1)
+# define PSI					 1.465571231876768  //super golden ratio
+
 # define EULER_GAMMA             0.5772156649015329  // Euler–Mascheroni constant γ
 # define LAMBERT_W1              0.5671432904097838  // Omega constant W(1), solves W*e^W = 1
 # define LN_2                    0.6931471805599453  // natural log of 2
@@ -123,6 +126,10 @@ typedef	struct s_knobs
 typedef struct s_control
 {
 	t_img		*color_con;
+	t_img		*w_tab;
+
+	int			colw_w, colw_h;
+
 	t_img		*nav;
 	t_img		*w_nav;
 	t_img		*r;
@@ -241,7 +248,7 @@ typedef struct s_game
 	int			thbp;//3 before
 
 	double		area_factor;
-
+	double		rz;
 
 //---included in god data----
 	bool		god;
@@ -282,11 +289,13 @@ typedef struct s_game
 	int			iters_change;
 
 	double		vert_dist;
-//--------------------------------
-	int			jump_to_center_col;//add to god?
-	bool		jump_to_sides_col;//add to god?
+
+	int			jump_to_center_col;
+	int			jump_to_sides_col;
 	int			ghost2;
-	t_img 		*texture;//make double circle list later //addgod
+//--------------------------------
+
+	t_img 		*texture;//make double circle list later
 	int			height_tex;//tex struct
 	int			width_tex;
 
@@ -296,7 +305,6 @@ typedef struct s_game
 	double			win_change_y;
 	unsigned int **pixels_xl;
 
-	int			*w_colors;
 	int			rv[3];// vary rv
 	int			rv_len;
 	long		i;
@@ -309,6 +317,8 @@ typedef struct s_game
 
 	int			width_orig;
 	int			height_orig;
+
+	t_wheel		*wheel;
 }		t_game;
 
 typedef struct 
@@ -322,15 +332,19 @@ typedef struct
 /****CHAOS UTILS****/
 void			render(t_game *r);
 void			information(t_game *r, int v, long i);
-int				r_loop(t_game *r, Xoro128 *rng);
-int				ft_r(int rv[], int v, long i, t_game *r);
+//int				ft_r(int rv[], int v, long i, t_game *r);
+//int				r_loop(t_game *r, Xoro128 *rng);
+
+//init
 void			events_init(t_game *r);
 void			info_init(t_game *r);
 void			r_init(t_game *r);
+void			init_wheel(t_game *r);
 void			game_init(t_game *r);
+void			polygon(int ***vertices, t_game *r);
+
 void			adjust_ratio(t_game *r, double new_ratio);
 int				set_and_check(int rv[], int v, long i, t_game *r);
-void			polygon(int ***vertices, t_game *r);
 void			free_poly(int ***vertices, int i);
 int				ft_round(double val);
 
@@ -340,8 +354,8 @@ void			chaos_game_curved(t_game *r, int **vertices, double x, double y);
 void			chaos_game_apply_function(t_game *r, int **vertices, double x, double y);
 
 /***COLORS***/
-void			color_option(t_game *r, int v, double x, double y, int **vertices);
-double			get_distance(double x1, double y1, double x2, double y2);
+//see color_ops.h
+//void			color_option(t_game *r, int v, double x, double y, int **vertices);
 unsigned int	map_color(t_img *from, t_game *r, int x, int y);
 
 /***HOOKS***/
@@ -367,8 +381,6 @@ void			zoom_iters_mouse_move(t_game *r);
 void			set_home(t_game *r);
 
 
-
-	
 /***PRINT BOARD AND SET PNG DATA***/
 void			print_board(t_game *r);
 void			put_ratio(t_game *r);
@@ -379,10 +391,14 @@ void			ft_putstr_c(char *s);
 void			ft_putstr_color(char *s, char *color);
 int 			get_numlen(long n);
 void			write_num_color(int num, char *color);
+
 png_text		*build_chaos_text(t_game *r);
 char			*serialize_game_data(t_game *game);
-char			*read_png_text_metadata(const char *filename);
-void			deserialize_game_data(t_game *r, const char *data);
+char			*serialize_wheel(t_game *r);
+char			*serialize_other_color(t_game *r);
+
+char			**read_png_text_metadata(const char *filename);
+void			deserialize_game_data(t_game *r, char **data);
 
 /***GUI CONTROLS***/
 void			destroy_controls(void *con, t_control *controls);
@@ -401,6 +417,9 @@ void			set_nav_vals(void *mlx_con, void *mlx_win, t_game *game, int nav);
 void			check_nav_knobs(int x, int y, t_game *r, t_control *con);
 void			set_nav_knobs(t_game *r, t_control *con);
 int				check_top_buttons(t_game *r, int x, int y, t_control *con);
+void			nav_arrow_change(t_game *r, double mag, double *to_change, double (*ft_r)(double val), int sign);
+void			w_nav_arrow_change(t_game *r, double val, int *to_change);
+
 
 void			set_color_con(t_game *r, t_control con);
 

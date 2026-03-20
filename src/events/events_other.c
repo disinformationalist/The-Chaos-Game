@@ -18,7 +18,7 @@ const t_colors CANDY = {BUBBLEGUM_PINK, LEMON_YELLOW, MINT_GREEN, SKY_BLUE, BLAC
 const t_colors SLIME = {TOXIC_GREEN, RADIOACTIVE_YELLOW, ALIEN_BLUE, SLIMY_PURPLE, BLACK1};
 const t_colors UNNAMED_1 = {COL_CYAN, MALACHITE_GREEN, GOLD, SINISTER_RED, BLACK1};
 const t_colors ORIGINAL = {COL_CYAN, COL_MAGENTA, COL_YELLOW, COL_BLUE, BLACK1};
-const t_colors NEBULA = {INDIGO_PURPLE, DARK_ORCHID, GOLD_2, ORANGE_RED, BLACK1};
+const t_colors CELTIC = {0xFFCA924A, 0xFFFFC64F, 0xFFE7F2FF, 0xFF556013, BLACK1};
 const t_colors ETERNAL_SPRING = {CHARTREUSE, HOT_PINK, DARK_TURQUOISE, GOLD_2, BLACK1};
 const t_colors DUSK = {0xFF9253FF, 0xFFFFC64F, 0xFFE7F2FF, 0xFF878EFF, BLACK1};
 
@@ -66,7 +66,7 @@ static int	key_handler_other_4(int keysym, t_game *r)
 	else if (keysym == KEY_N)
 		r->colors = ORIGINAL;
 	else if (keysym == KEY_M)
-		r->colors = NEBULA;
+		r->colors = CELTIC;
 	else
 		supersample_handler(keysym, r);
 	return (0);
@@ -80,7 +80,8 @@ static int	key_handler_other_3(int keysym, t_game *r)
 			r->max_distance -= r->height / 10;
 	else if (keysym == PAD_3)
 	{
-		adjust_ratio(r, 2);
+		//adjust_ratio(r, 2);
+		adjust_ratio(r, PSI);
 	}
 	else
 		key_handler_other_4(keysym, r);
@@ -160,11 +161,15 @@ void	set_home(t_game *r)
 	rotate(r, -r->rotate);
 	r->col_shift_x = ft_round((double)r->col_shift_x / r->zoom);
 	r->col_shift_y = ft_round((double)r->col_shift_y / r->zoom);
-	r->r = r->height *.4;
+	r->r = ft_round((double)r->height * .4);
+
+	//r->r = sqrt((double)(SQ(r->width) + SQ(r->height)) / 4);//FOR CORNER
+
 	if (r->dist_ratio > 1 && r->dist_ratio <= 2)
 		r->zoom = (1 / r->ratio_change);
 	else
 		r->zoom = 1;
+	r->rz = 1.0 / ((double)r->r * r->zoom);
 	r->iters_change = 0;
 	r->move_x = 0.0;
 	r->move_y = 0.0;

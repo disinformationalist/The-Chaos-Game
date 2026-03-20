@@ -40,6 +40,10 @@ void	set_color_vals(void *mlx_con, void *mlx_win, t_game *game)
 	unsigned int	val_col;
 	t_4color		color;
 
+	char			sat[20];
+	char			light[20];
+	
+
 	color = game->curr_col;
 	val_col = 0x90C4FF;
 	hex_col = (unsigned int)((color.t << 24) | (color.r << 16) | (color.g << 8) | (color.b));
@@ -47,13 +51,28 @@ void	set_color_vals(void *mlx_con, void *mlx_win, t_game *game)
 	sprintf(r, "%d", color.r);
 	sprintf(g, "%d", color.g);
 	sprintf(b, "%d", color.b);
-	sprintf(t, "%d", color.t);
+
+
+	sprintf(sat, "%.3f", game->wheel->saturation);
+	sprintf(light, "%.3f", game->wheel->lightness);
+
 
 	mlx_string_put(mlx_con, mlx_win, 315, 87, val_col, hex);
 	y_s = 117;
-	mlx_string_put(mlx_con, mlx_win, 327, y_s, val_col, r);
-	mlx_string_put(mlx_con, mlx_win, 327, y_s += 25, val_col, g);
-	mlx_string_put(mlx_con, mlx_win, 327, y_s += 25, val_col, b);
+	if (game->color_op == 1)//wheel
+	{
+		mlx_string_put(mlx_con, mlx_win, 320, y_s, val_col, sat);
+		mlx_string_put(mlx_con, mlx_win, 320, y_s += 25, val_col, light);
+		y_s += 25;
+		sprintf(t, "%d", game->wheel->trans);
+	}
+	else
+	{
+		mlx_string_put(mlx_con, mlx_win, 327, y_s, val_col, r);
+		mlx_string_put(mlx_con, mlx_win, 327, y_s += 25, val_col, g);
+		mlx_string_put(mlx_con, mlx_win, 327, y_s += 25, val_col, b);
+		sprintf(t, "%d", color.t);
+	}
 	mlx_string_put(mlx_con, mlx_win, 327, y_s += 25, val_col, t);
 
 	//depth setting
@@ -177,6 +196,7 @@ t_4color	set_color_knobs(t_img *img, t_control *cont, int k_width, t_colors colo
 	t_control		control = *cont;
 
 	num_color = set_color(colors, control.col_num);
+
 	start = 22 - k_width / 2;
 
 	x_startr = start + num_color.r;
@@ -188,6 +208,8 @@ t_4color	set_color_knobs(t_img *img, t_control *cont, int k_width, t_colors colo
 	y_startg = y_startr + 25;
 	y_startb = y_startg + 25;
 	y_startt = y_startb + 25;
+
+
 
 
 	//iters to angle
@@ -233,6 +255,58 @@ t_4color	set_color_knobs(t_img *img, t_control *cont, int k_width, t_colors colo
 	return (num_color);
 }
 
+void	set_wheel_knobs(t_img *img, t_control *cont, int k_width, t_wheel *wheel)
+{
+	int i, j;
+	unsigned int color;
+	int y_startt, x_startt, y_start_sat, x_start_sat, x_start_light, y_start_light;
+	int	y_starts, x_starts, y_startdist, x_startdist, x_startv, y_startv;
+	
+	y_start_sat = 103;
+	x_start_sat = 141 + ft_round(wheel->saturation * 100);
+	
+	y_start_light = 128;
+	x_start_light = 141 + ft_round(wheel->lightness * 100);
+
+	y_startt = 178;
+	x_startt = 14 + wheel->trans;
+
+	//iters to angle
+	double iters = (double)(cont->iters % 336708) * ITER_FACTOR;//ITER_fact = PI / 168354.0
+	
+	x_starts = ft_round(120 * cos(iters)) + cont->knobs.iter.cx;
+	y_starts = cont->knobs.iter.cy - ft_round(120 * sin(iters));
+	cont->knobs.iter.angle = iters;
+	cont->knobs.iter.posx = x_starts;
+	cont->knobs.iter.posy = y_starts;
+
+	//dist, len 144 in center of slider
+	x_startdist = 119 + ft_round((cont->max_d - cont->base_d) / (6 * cont->base_d) * 144);
+	y_startdist = 243;
+	x_startv = 141 + ft_round(cont->vert_d * 100);
+	y_startv = 273;
+	j = -1;
+	while (++j < k_width)
+	{
+		i = -1;
+		while (++i < k_width)
+		{
+			color = pixel_color_get3(i, j , cont->s);
+			if (color != 0xFF202020)
+			{
+				my_pixel_put(x_start_sat + i, y_start_sat + j, img, color);
+				my_pixel_put(x_start_light + i, y_start_light + j, img, color);
+				my_pixel_put(x_startt + i, y_startt + j, img, color);
+
+				my_pixel_put(x_starts + i, y_starts + j, img, color);
+				my_pixel_put(x_startdist + i, y_startdist + j, img, color);
+				my_pixel_put(x_startv + i, y_startv + j, img, color);
+			}
+		}
+	}
+}
+
+
 void	set_color_con(t_game *r, t_control con)
 {
 	int i, j;
@@ -244,6 +318,18 @@ void	set_color_con(t_game *r, t_control con)
 		i = -1;
 		while (++i < con.m_width)
 			my_pixel_put(i, j, img, pixel_color_get3(i, j, con.color_con));
+	}
+
+	//set wheel if on it
+	if (r->color_op == 1)
+	{
+		j = -1;
+		while (++j < r->con->colw_h)
+		{
+			i = -1;
+			while (++i < r->con->colw_w)
+				my_pixel_put(i + 6, j + 70, img, pixel_color_get3(i, j, r->con->w_tab));
+		}
 	}
 }
 
@@ -266,7 +352,10 @@ void	set_controls(t_game *r)
 	r->con->vert_d = r->vert_dist;
 	if (!r->con->nav_open && !r->con->nav_w_open)
 	{
-		r->curr_col = set_color_knobs(&r->img, r->con, con.k_width, r->colors);
+		if (r->color_op != 1)
+			r->curr_col = set_color_knobs(&r->img, r->con, con.k_width, r->colors);
+		else
+			set_wheel_knobs(&r->img, r->con, con.k_width, r->wheel);
 		mlx_put_image_to_window(r->mlx_connect, r->mlx_win, r->img.img_ptr, 0, 0);
 		set_color_vals(r->mlx_connect, r->mlx_win, r);
 	}

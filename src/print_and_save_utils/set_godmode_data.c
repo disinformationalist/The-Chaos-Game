@@ -1,10 +1,42 @@
 #include "chaos.h"
-//still needs color data...
+
+char *serialize_wheel(t_game *r)
+{	
+    char *buffer = malloc(1024);
+    if (!buffer)
+        clear_all(r);
+    size_t offset = 0;
+
+    /***Serialize wheel data***/
+    offset += snprintf(buffer + offset, 1024 - offset, "num_colors=%d;", r->wheel->num_colors);
+    offset += snprintf(buffer + offset, 1024 - offset, "saturation=%f;", r->wheel->saturation);
+    offset += snprintf(buffer + offset, 1024 - offset, "lightness=%f;", r->wheel->lightness);
+    offset += snprintf(buffer + offset, 1024 - offset, "base_hue=%d;", r->wheel->base_hue);
+    offset += snprintf(buffer + offset, 1024 - offset, "trans=%d;", r->wheel->trans);
+	offset += snprintf(buffer + offset, 1024 - offset, "freq=%f;", r->wheel->freq);
+    offset += snprintf(buffer + offset, 1024 - offset, "spiral=%f;", r->wheel->spiral);
+	return (buffer);
+}
+
+char *serialize_other_color(t_game *r)
+{	
+    char *buffer = malloc(1024);
+    if (!buffer)
+        clear_all(r);
+    size_t offset = 0;
+
+
+    /***Serialize wheel data***/
+    offset += snprintf(buffer + offset, 1024 - offset, "jump_to_center_col=%d;", r->jump_to_center_col);
+    offset += snprintf(buffer + offset, 1024 - offset, "jump_to_sides_col=%d;", r->jump_to_sides_col);
+    offset += snprintf(buffer + offset, 1024 - offset, "ghost2=%d;", r->ghost2);
+		//printf("str: %s\n", buffer);
+
+	return (buffer);
+}
+
 char *serialize_game_data(t_game *r)
 {
-    //int width;
-	//int height;
-	
     char *buffer = malloc(1024);
     if (!buffer)
         clear_all(r);
@@ -65,23 +97,7 @@ char *serialize_game_data(t_game *r)
 
     offset += snprintf(buffer + offset, 1024 - offset, "background=%x;", r->colors.background);
 
-	
     offset += snprintf(buffer + offset, 1024 - offset, "vert_dist=%f;", r->vert_dist);
-
-
-
-
-
 
 	return (buffer);
 }
-	/* if (r->supersample)
-	{
-		width = r->width / r->s_kernel
-		height = r->height / r->s_kernel;
-	}
-	else
-	{
-		width = r->width;
-		height = r->height;
-	} */

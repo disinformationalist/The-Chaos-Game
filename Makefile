@@ -31,7 +31,6 @@ SRCS := ./src/main.c \
 ./src/print_and_save_utils/time_utils.c \
 ./src/chaos.c \
 ./src/cmyk.c \
-./src/colors.c \
 ./src/controls.c \
 ./src/games.c \
 ./src/init.c \
@@ -41,9 +40,8 @@ SRCS := ./src/main.c \
 ./src/set_polygon.c \
 ./src/set_con.c \
 ./src/texture.c
-
   
-CFLAGS := -Wall -Wextra -Werror -I$(INC_DIR) -Ofast -march=native -Wno-unused-result
+CFLAGS := -Wall -Wextra -Werror -I$(INC_DIR) -Ofast -march=native -Wno-unused-result #-pg -g -pg
 
 CC := cc
 
