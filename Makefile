@@ -23,25 +23,36 @@ SRCS := ./src/main.c \
 ./src/events/events_mouse_super.c \
 ./src/events/events_other.c \
 ./src/events/events_rules.c \
+./src/print_and_save_utils/export_buffer.c \
 ./src/print_and_save_utils/get_god_data.c \
 ./src/print_and_save_utils/print_utils.c \
 ./src/print_and_save_utils/print_utils_2.c \
 ./src/print_and_save_utils/set_godmode_data.c \
 ./src/print_and_save_utils/set_png_board.c \
+./src/print_and_save_utils/testing.c \
 ./src/print_and_save_utils/time_utils.c \
+./src/render/buffer_utils.c \
+./src/render/downsampler.c \
+./src/render/render.c \
+./src/render/render_tiled.c \
 ./src/chaos.c \
 ./src/cmyk.c \
 ./src/controls.c \
 ./src/games.c \
 ./src/init.c \
-./src/render.c \
 ./src/resize_window.c \
 ./src/rules.c \
 ./src/set_polygon.c \
 ./src/set_con.c \
-./src/texture.c
+./src/texture.c \
+./src/channel_coloring.c \
+./src/set_background.c
+
+
+
+
   
-CFLAGS := -Wall -Wextra -Werror -I$(INC_DIR) -Ofast -march=native -Wno-unused-result #-pg -g -pg
+CFLAGS := -Wall -Wextra -Werror -I$(INC_DIR) -Ofast -march=native -Wno-unused-result -Wno-unused-function#-pg -g -pg
 
 CC := cc
 

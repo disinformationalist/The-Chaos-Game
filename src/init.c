@@ -65,24 +65,41 @@ void	free_wheel(t_wheel *w)
 	free(w);
 }
 
+void	free_color_info(t_color_info *info)
+{
+	if (info->highs)
+		free(info->highs);
+	free(info);
+}
+
 void	clear_all(t_game *r)
 {
+	free(r->threads);
+	if (r->tile)
+		free(r->tile);
 	if (r->texture)
-		free(r->texture);
+		destroy_img(r->texture, r->mlx_connect);
 	if (r->con)
 		destroy_controls(r->mlx_connect, r->con);
 	if (r->wheel)
-		free(r->wheel);
+		free_wheel(r->wheel);
 	if (r->pixels_xl)
 		free_ui_matrix(r->pixels_xl, r->height_orig * r->s_kernel);
+	if (r->info)
+		free_color_info(r->info);
+	if (r->img_buffs)
+		free_3df_array_i(r->img_buffs, 8, r->height_orig);
 	if (r->img.img_ptr)
 		mlx_destroy_image(r->mlx_connect, r->img.img_ptr);
 	if (r->cmyk.img_ptr)
 		mlx_destroy_image(r->mlx_connect, r->cmyk.img_ptr);
 	if (r->mlx_win)
 		mlx_destroy_window(r->mlx_connect, r->mlx_win);
-	mlx_destroy_display(r->mlx_connect);
-	free(r->mlx_connect);
+	if (r->mlx_connect)
+	{
+		mlx_destroy_display(r->mlx_connect);
+		free(r->mlx_connect);
+	}
 	exit(EXIT_FAILURE);
 }
 
@@ -126,12 +143,6 @@ void	events_init(t_game *r) //for things not to reset upon strg press!
 
 void	init_rv(t_game *r)
 {
-	int i;
-
-	i = -1;
-	while (++i < r->rv_len)
-		r->rv[i] = i;
-	
 	//can try a second rv here that updated after and uses a fixed slot system instead of rolling
 	r->prev = 1;
 	r->obp = 0;
@@ -164,32 +175,38 @@ void	init_not_god(t_game *r)
 	//-----Area * (1 / 2), Area: Area(sides) = (sides / 2) * sin(2 * M_PI / sides) * r * r 
 	r->area_factor = .25 * (double)r->sides * sin(2 * M_PI / (double)r->sides);
 	r->iters = ft_round((long)(SQ(r->r * r->zoom) * r->area_factor));
-	r->vert_dist = 1;
-	r->max_distance = r->con->base_d;
+	r->max_distance = sqrt((double)(SQ(r->width_orig) + SQ(r->height_orig)) / 4);//dist to corner of screen
 	init_wheel(r);
 
 	r->jump_to_center_col = 0;
 	r->jump_to_sides_col = 0;
 	r->ghost2 = 0;
-	
 }
 
-void	info_init(t_game *r)
+void	gui_init(t_game *r)
 {
 	r->con_open = false;
 	r->on_con = false;
 	r->con->knob = 0;
 	r->con->base_d = sqrt((double)(SQ(r->width) + SQ(r->height)) / 4);//dist to corner of screen
+	
+	//stores starting maxd as base and maxd change
+	(r->supersample) ? (r->start_maxd = r->con->base_d * r->s_kernel) : (r->start_maxd = r->con->base_d);
+	r->con->base_d *= r->vert_dist;
+	r->con->max_d = r->con->base_d;
+}
+
+void	info_init(t_game *r)
+{
+	
 	r->win_change_x = 1;
 	r->win_change_y = 1;
 	if (!r->god)
 		init_not_god(r);
+
 	r->rz = 1.0 / ((double)r->r * r->zoom);
 	
-	//stores starting maxd as base and maxd change
-	(r->god && r->supersample) ? (r->start_maxd = r->con->base_d * r->s_kernel) : (r->start_maxd = r->con->base_d);
-	r->con->base_d *= r->vert_dist;
-	r->con->max_d = r->con->base_d;
+	init_color_info(r);
 
 	r->rv_len = 3;//change here and in header struct
 	init_rv(r);
@@ -197,6 +214,10 @@ void	info_init(t_game *r)
 	
 	r->vertices2 = NULL;
 	r->ghost = false;
+
+	r->nlm.f = 2;
+	r->nlm.sr = 15;
+	r->nlm.kc = 1.0f;
 }
 
 void	r_init(t_game *r)
@@ -223,6 +244,16 @@ static inline void init_nulls(t_game *r)
 	r->con = NULL;
 	r->texture = NULL;
 	r->pixels_xl = NULL;
+	r->tile = NULL;
+	r->info = NULL;
+	r->info = (t_color_info *)malloc(sizeof(t_color_info));
+	if (!r->info)
+		clear_all(r);
+	r->info->highs = NULL;
+	if (!set_color_wheel(r->wheel))
+		clear_all(r);
+	r->img_buffs = NULL;
+	r->multi_pixels_xl = NULL;
 
 	r->width_tex = 0;
 	r->height_tex = 0;
@@ -231,11 +262,13 @@ static inline void init_nulls(t_game *r)
 void	game_init(t_game *r)
 {
 	init_nulls(r);
+
 	r->mlx_connect = mlx_init();
 	if (r->mlx_connect == NULL)
 		exit(EXIT_FAILURE);
 	r->mlx_win = mlx_new_window(r->mlx_connect, r->width, \
 		r->height, "******* THE  CHAOS  GAME *******");	
+	
 	if (r->mlx_win == NULL)
 	{
 		mlx_destroy_display(r->mlx_connect);
@@ -252,5 +285,34 @@ void	game_init(t_game *r)
 	if (!r->con)
 		clear_all(r);
 	init_textures(r);
+	if (!r->god)
+		r->vert_dist = 1;
+	gui_init(r);
 	info_init(r);
+	
+//	printf("here\n");
+	
+}
+
+//make the tiled version of init, no mlx,
+//need a way to inport texture info without mlx
+
+void	game_init_tiled(t_game *r)
+{
+	init_nulls(r);
+
+	r->tile = (t_tile *)malloc(sizeof(t_tile));
+	if (!r->tile)
+		clear_all(r);
+
+	r->mlx_connect = NULL;
+	r->mlx_win = NULL;
+	r->img.img_ptr = NULL;
+	r->cmyk.img_ptr = NULL;
+	r->con = NULL;
+	r->texture = NULL;
+	if (!r->god)
+		r->vert_dist = 1;
+	info_init(r);
+
 }

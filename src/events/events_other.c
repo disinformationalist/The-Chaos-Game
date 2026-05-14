@@ -124,7 +124,10 @@ static int	key_handler_other_2(int keysym, t_game *r)
 	else if (keysym == XK_Control_L)
 	{
 		r_init(r);
+		r->vert_dist = 1;
+		gui_init(r);
 		info_init(r);
+		r->max_distance = r->con->base_d;
 	}
 	else
 		key_handler_other_3(keysym, r);
@@ -146,14 +149,16 @@ static int	key_handler_other_2layer(int keysym, t_game *r)//avail 2nd layer
 	else if (keysym == XK_Control_L)
 	{
 		r_init(r);
+		r->vert_dist = 1;
+		gui_init(r);
 		info_init(r);
+		r->max_distance = r->con->base_d;
+
 	}
 	else
 		key_handler_other_3layer(keysym, r);
 	return (0);
 }
-
-
 
 
 void	set_home(t_game *r)

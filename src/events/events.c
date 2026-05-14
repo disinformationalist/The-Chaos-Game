@@ -15,11 +15,11 @@
 void reset_iters(t_game *r)//factor in wheel knob when adjust iters? divide out other stuff to get change
 {
 	if (r->dist_ratio < 1.0 && r->dist_ratio > .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ((1 - r->dist_ratio) * r->r * r->zoom) * r->area_factor;
+		r->iters = (long)(.5 * (8.0 + (double)r->iters_change) * SQ((1 - r->dist_ratio) * (double)r->r * r->zoom) * r->area_factor);
 	else if (r->dist_ratio <= .5)
-		r->iters = .5 * (8 + r->iters_change) * SQ(r->dist_ratio * r->r * r->zoom) * r->area_factor;
+		r->iters = (long)(.5 * (8.0 + (double)r->iters_change) * SQ(r->dist_ratio * (double)r->r * r->zoom) * r->area_factor);
 	else//(r->dist_ratio > 1)
-		r->iters = .5 * (8 + r->iters_change) * SQ((r->dist_ratio - 1) * r->r * r->zoom * r->ratio_change) * r->area_factor;
+		r->iters = (long)(.5 * (8.0 + (double)r->iters_change) * SQ((r->dist_ratio - 1) * (double)r->r * r->zoom * r->ratio_change) * r->area_factor);
 }
 
 int	ft_putstr_color_fd(int fd, char *s, char *color)
@@ -38,20 +38,27 @@ int	ft_putstr_color_fd(int fd, char *s, char *color)
 
 int	close_screen(t_game *r)
 {
+	free(r->threads);
+	if (r->tile)
+		free(r->tile);
 	if (r->texture)
-	{
-		mlx_destroy_image(r->mlx_connect, r->texture->img_ptr);
-		free(r->texture);
-	}
+		destroy_img(r->texture, r->mlx_connect);
 	if (r->con)
 		destroy_controls(r->mlx_connect, r->con);
 	if (r->wheel)
-		free(r->wheel);
-	mlx_destroy_image(r->mlx_connect, r->img.img_ptr);
-	mlx_destroy_image(r->mlx_connect, r->cmyk.img_ptr);
-	mlx_destroy_window(r->mlx_connect, r->mlx_win);
-	mlx_destroy_display(r->mlx_connect);
-	free(r->mlx_connect);
+		free_wheel(r->wheel);
+	if (r->info)
+		free_color_info(r->info);
+	if (r->img_buffs)
+		free_3df_array_i(r->img_buffs, 8, r->height_orig);
+	if (r->mlx_connect)
+	{
+		mlx_destroy_image(r->mlx_connect, r->img.img_ptr);
+		mlx_destroy_image(r->mlx_connect, r->cmyk.img_ptr);
+		mlx_destroy_window(r->mlx_connect, r->mlx_win);
+		mlx_destroy_display(r->mlx_connect);
+		free(r->mlx_connect);
+	}
 	exit(EXIT_SUCCESS);
 }
 
@@ -137,6 +144,8 @@ static int	key_handler_3layer(int keysym, t_game *r)
 
 void adjust_ratio(t_game *r, double new_ratio)
 {
+	double zoom_ratio;
+
 	if (r->dist_ratio == 2)
 	{
 		r->move_x = 0.0;
@@ -161,8 +170,12 @@ void adjust_ratio(t_game *r, double new_ratio)
 	if (new_ratio > 1 && new_ratio <= 2 && old != 1)//2nd set curr
 		r->zoom /= r->ratio_change;//alternating series solution correct (for  between 1 and 2)
 	
-	r->move_x *= (old_zoom / r->zoom);
-	r->move_y *= (old_zoom / r->zoom);
+	zoom_ratio = (old_zoom / r->zoom);
+	r->move_x *= zoom_ratio;
+	r->move_y *= zoom_ratio;
+
+	/* r->col_shift_y /= zoom_ratio;
+	r->col_shift_x /= zoom_ratio; */
 	r->rz = 1.0 / ((double)r->r * r->zoom);
 	
 	reset_iters(r);
@@ -294,6 +307,7 @@ static int	key_handler_2layer(int keysym, t_game *r)//need to make new iters adj
 		r->jump_to_center_col++;
 		if (r->jump_to_center_col > 3)
 			r->jump_to_center_col = 0;
+		printf("ghost center: %d\n", r->jump_to_center_col);
 	}
 	else if (keysym == APOST)
 	{
@@ -301,6 +315,7 @@ static int	key_handler_2layer(int keysym, t_game *r)//need to make new iters adj
 		r->jump_to_sides_col++;
 		if (r->jump_to_sides_col > 1)
 			r->jump_to_sides_col = 0;
+		printf("ghost sides: %d\n", r->jump_to_sides_col);
 	}
 	else
 		key_handler_3layer(keysym, r);

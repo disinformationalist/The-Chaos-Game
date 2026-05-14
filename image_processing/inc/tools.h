@@ -11,6 +11,14 @@ typedef struct s_pixel
 	uint8_t blue;
 }	t_pixel;
 
+typedef struct s_pixelf
+{
+	float alpha;
+	float red;
+	float green;
+	float blue;
+}	t_pixelf;
+
 
 typedef struct s_pixeld
 {
@@ -40,6 +48,7 @@ typedef struct s_nlm
 	t_pixeld	**new;
 	pthread_t	*threads;
 }	t_nlm;
+
 
 typedef struct s_pix_piece
 {

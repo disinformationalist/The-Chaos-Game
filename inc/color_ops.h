@@ -15,13 +15,48 @@ static inline void	my_pixel_put2(int x, int y, t_img *img, unsigned int color)
 	*(unsigned int *)(img->pixels_ptr + offset) = color;
 }
 
+//original version
+
 static inline void	put_pixel(int x, int y, t_game *r, unsigned int color)
 {
  	if (!r->supersample)
 		my_pixel_put2(x, y, &r->img, color);
+	else if (r->tile_mode)
+	{
+		if (x < r->tile->x0b_xl || x >= (r->tile->x0b_xl + r->tile->wb_xl) || y < r->tile->y0b_xl || y >= r->tile->y0b_xl + r->tile->hb_xl)
+			return ;
+		x -= r->tile->x0b_xl;
+		y -= r->tile->y0b_xl;
+		r->pixels_xl[y][x] = color;
+	}
 	else
 		r->pixels_xl[y][x] = color;
+/* 	else if (r->tile_mode)
+	{
+		if (x < r->tile->x0b_xl || x >= r->tile->x0b_xl + r->tile->wb_xl)
+			return ;
+		if (y < r->tile->y0b_xl || y >= r->tile->y0b_xl + r->tile->hb_xl)
+			return ;
+		x -= r->tile->x0b_xl;
+		y -= r->tile->y0b_xl;
+		r->pixels_xl[y][x] = color;
+	} */
+	
 }
+
+//multibuff version, too mem intensive will use the same xl buffs times
+
+/* static inline void	put_pixel(int x, int y, t_game *r, unsigned int color)
+{
+ 	if (!r->supersample)
+		my_pixel_put2(x, y, &r->img, color);
+	else if (r->multibuff)
+	{
+		r->multi_pixels_xl[r->curr_buff][y][x] = color;
+	}
+	else
+		r->pixels_xl[y][x] = color;
+} */
 
 static inline double get_dist(double x1, double y1, double x2, double y2)
 {

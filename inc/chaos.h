@@ -56,7 +56,7 @@
 /* Interesting constants to try strictly in (0.5, φ) */
 
 # define INV_PHI                 0.6180339887498948  // 1/phi (golden ratio reciprocal) = (phi - 1)
-# define PSI					 1.465571231876768  //super golden ratio
+# define PSI					 1.465571231876768  //super golden ratio(like 3d golden) 
 
 # define EULER_GAMMA             0.5772156649015329  // Euler–Mascheroni constant γ
 # define LAMBERT_W1              0.5671432904097838  // Omega constant W(1), solves W*e^W = 1
@@ -92,6 +92,12 @@ static inline int wrap_index(int i, int max)
 {
 	return (i + max) % max;
 }
+
+typedef pthread_mutex_t mtx_t;
+//typedef t_complex (*f)(t_complex);
+
+typedef float (*num_f)(float);
+typedef float(*den_f)(float, float);
 
 #define MAX_R 30
 
@@ -226,8 +232,120 @@ typedef struct s_data
 
 typedef bool (*rule_ft)(int v, const t_relations *rels);
 
+
+/* typedef enum e_btype
+{
+	BUDDHA1,
+	BUDDHA2,
+	LOTUS,
+	PHEONIX,
+} t_btype; */
+
+typedef enum e_ftype
+{
+	MEAN,
+	ADJUST,
+	GAUSS,
+} t_ftype;
+
+typedef struct s_color_info
+{
+	//t_btype	type;
+	t_ftype ftype;
+	
+	float	*highs;
+	
+	float	rpow;
+	float	gpow;
+	float	bpow;
+
+	/* float	high_r;
+	float	high_g;
+	float	high_b; */
+
+	int		min1;
+	int		min2;
+	int		min3;
+	int		max1;
+	int		max2;
+	int		max3;
+
+	float	edge0_r;
+	float	edge0_g;
+	float	edge0_b;
+	float	edge1_r;
+	float	edge1_g;
+	float	edge1_b;
+
+	bool	filter;
+	bool	smootherstep;
+	int		fchan;
+	int		flevel;
+
+} t_color_info;
+
+typedef struct s_nl
+{
+	int		f;
+	int		sr;
+	float	kc;
+
+}	t_nl;
+
+typedef struct s_tile
+{
+	int	x0;
+	int	y0;
+	int	w;
+	int	h;
+
+	int	bleed;
+
+	int	x0b;
+	int	y0b;
+	int	wb;
+	int	hb;
+
+	int	x0b_xl;
+	int	y0b_xl;
+	int	wb_xl;
+	int	hb_xl;
+}	t_tile;
+
+typedef struct s_export
+{
+	unsigned char	*pixels;
+	int				w;
+	int				h;
+}	t_export;
+
+
 typedef struct s_game
 {
+
+	//tiling
+	t_tile			*tile;
+	bool			tile_mode;
+	t_export		*full_tiled;
+	//multbuffnlm
+
+	t_nl				nlm;
+	float 			***img_buffs;//
+	unsigned int 	***multi_pixels_xl;// set up for multibuff 
+
+	bool			multibuff;
+	bool			use_tx;
+
+	int				curr_buff;
+	int				buffs;
+	pthread_t		*threads;
+	int 			num_rows;
+	int 			num_cols;
+	t_color_info	*info;
+
+	//------
+	
+	
 	Xoro128		rng;
 	t_data		*data;
 	t_control 	*con;
@@ -321,6 +439,46 @@ typedef struct s_game
 	t_wheel		*wheel;
 }		t_game;
 
+//thread data for each thread
+
+typedef struct s_piece
+{
+	int			id;
+	int			x_s;
+	int			x_e;
+	int			y_s;
+	int			y_e;
+	t_game		*r;
+	Xoro128		rng;
+
+
+	//for testing
+	unsigned int	thread_color;
+}	t_piece;
+
+typedef struct s_nlm_piece
+{
+	t_game	*r;
+	t_piece	piece;
+	float	***out;
+	int		width;
+	int		height;
+}	t_nlm_piece;
+
+typedef struct s_down_piece
+{
+	t_game			*r;
+	float			***multi;
+	unsigned int	**pixels_xl;
+	int				kern_size;
+	int				buff_id;
+	int				y_s;
+	int				y_e;
+	int				w;
+	int				h;
+}	t_down_piece;
+
+
 typedef struct 
 {
     int x;
@@ -339,6 +497,7 @@ void			information(t_game *r, int v, long i);
 void			events_init(t_game *r);
 void			info_init(t_game *r);
 void			r_init(t_game *r);
+void 			gui_init(t_game *r);
 void			init_wheel(t_game *r);
 void			game_init(t_game *r);
 void			polygon(int ***vertices, t_game *r);
@@ -348,10 +507,21 @@ int				set_and_check(int rv[], int v, long i, t_game *r);
 void			free_poly(int ***vertices, int i);
 int				ft_round(double val);
 
+void			render_init(t_game *r, int ***vertices, double *x, double *y);
+//set backgrounds
+void			set_background_color(t_game *r, unsigned int background, int w, int h);
+void			set_background_texture(t_game *r, t_img *tx);
+void 			init_xl(t_game *r, bool use_tx, int w, int h);
+void			set_ui_mat(t_game *r, bool use_tx, int w, int h);
+void			reset_background_color(t_game *r, unsigned int background, int w, int h);
+
+
 /*****GAMES*****/
 void			chaos_game(t_game *r, int **vertices, double x, double y);
 void			chaos_game_curved(t_game *r, int **vertices, double x, double y);
 void			chaos_game_apply_function(t_game *r, int **vertices, double x, double y);
+void			run_game(t_game *r, int **vertices, double x, double y);
+
 
 /***COLORS***/
 //see color_ops.h
@@ -426,6 +596,51 @@ void			set_color_con(t_game *r, t_control con);
 
 //void			reset_track(t_img *img, t_control control, int move_y);
 
+
+/**stuff for multibuffer nl_means **/
+
+float				**nlm_fchannel(float **color, float **var, int width, int height);
+void				color_to_buffs(unsigned int color_in, int x, int y, float ***img_buffs);
+void				combine_buff_set_var(float ***buffers, int chan, int buffs, int width, int height);
+
+void				combine_to_avg_var(float ***buffers, int buffs,
+					int width, int height);
+void				init_multibuff(t_game *r, int w, int h);
+void				init_color_info(t_game *r);
+void				free_3df_array_i(float ***array3d, int k, int height);
+void				color_buffers(t_game *r);
+
+void				thread_nlm(t_game *r, int width, int height);
+
+void				color_buffers_simple_threaded(t_game *r);
+void				downsample_xl_to_multi(float ***multi, unsigned int **pixels_xl,
+					int width, int height, int kern_size, int buff_id);
+void				downsample_xl_to_multi_threaded(t_game *r, int w, int h);
+
+void				thread_error(t_game *r, int i);
+void				finalize_avg_var(float ***buffers, int buffs, int width, int height);
+void				loop_run(t_game *r, int **verts, double x, double y, uint64_t glob_seed);
+void				free_buffs(t_game *r);
+
+
+/*** TILED RENDER MODE ***/
+void				game_init_tiled(t_game *r);
+void				render_tiles(t_game *r);
+void				downsample_xl_to_ppm_tile(t_game *r, t_tile *t, const char *filename);
+void				print_tile_info(t_tile *t);
+void				downsample_xl_to_export_tile(t_game *r, t_tile *t, t_export *full);
+void				export_buffer(t_game *r, t_export *full_tiled);
+
+int					render_w(t_game *r);
+int					render_h(t_game *r);
+int					render_w_xl(t_game *r);
+int					render_h_xl(t_game *r);
+
+
+
+
+
+
 /***OTHER***/
 //void		build_rules_active(const bool *rules, rule_ft active[MAX_R + 1]);
 void			print_time(long start, long end, char *msg);
@@ -435,5 +650,10 @@ void			cmyk_softproof_image(t_game *r, t_img *src, t_img *dst);
 /***CLEAN***/
 void			clear_all(t_game *r);
 void			free_poly(int ***vertices, int i);
+void			free_wheel(t_wheel *w);
+void			free_color_info(t_color_info *info);
+void			destroy_img(t_img *img, void *con);
+
+
 
 #endif

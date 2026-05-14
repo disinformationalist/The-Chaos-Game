@@ -104,22 +104,38 @@ int	main(int ac, char **av)
 	t_game	r;
 	bool	flag = 0;
 
-	//printf("the number of cores: %d\n", get_num_cores());
-	
+	//temp
+	r.tile_mode = 1;//true;//todo: make option on init_god/god2 to tile large renders, adjust to super level included (./chaos width height chaos_1.png -t23)
+
+	//here for god mode to fill params
 	r.wheel = (t_wheel *)malloc(sizeof(t_wheel));
-	if (!r.wheel)
-		clear_all(&r);
+	if (!r.wheel)	
+		return (EXIT_FAILURE);
 	r.wheel->colors = NULL;
-	if (ac == 2)
+	
+
+	//printf("the number of cores: %d\n", get_num_cores());
+	r.num_cols = 1;
+	r.num_rows = get_num_cores();
+	r.threads = (pthread_t *)malloc(r.num_rows * r.num_cols * sizeof(pthread_t));
+	if (!r.threads)
 	{
-		init_god(&r, av);
-		flag = 1;
+		free(r.wheel);
+		printf("Error: Thread Malloc failed\n");
+		return (EXIT_FAILURE);
 	}
+	if (ac == 2)
+		init_god(&r, av), flag = 1;
 	else if (ac == 4)
 		init_god2(&r, av);
 	else
 		not_god(&r, ac, av);
-	game_init(&r);
+	
+	if (r.tile_mode)
+		game_init_tiled(&r);
+	else
+		game_init(&r);
+
 	r.width_orig = r.width;
 	r.height_orig = r.height;
 	if (ac == 4)
@@ -128,10 +144,9 @@ int	main(int ac, char **av)
 		r.god = false;
 	r.layer = 0;
 
-	if (flag)//load the super img without rebuilding it. ONLY WITH GOD1, NO RESIZE
+	if (flag && !r.tile_mode)//load the super img without rebuilding it. ONLY WITH GOD1, NO RESIZE
 	{
 		t_img	*temp;
-
 		if (r.supersample)
 		{
 			r.width *= r.s_kernel;
@@ -144,13 +159,49 @@ int	main(int ac, char **av)
 		mlx_put_image_to_window(r.mlx_connect, r.mlx_win, r.img.img_ptr, 0, 0);
 	}
 	//for keeping super off on open for god2
-	else if (r.supersample)
-	{	
+	else if (r.supersample && !flag)// && !r.tile_mode)
+	{
 		set_supersampler_off(&r);
-		r.supersample = 0;
 	}
-	if (!flag)
+	else if (flag && r.tile_mode)
+	{
+		r.start_maxd = sqrt((double)(SQ(r.width) + SQ(r.height)) / 4);
+		if (r.supersample)
+		{
+			r.width *= r.s_kernel;
+			r.height *= r.s_kernel;
+			r.start_maxd *= r.s_kernel;
+		}
+	}
+	if (!flag && r.tile_mode)
+	{
+		
+		set_supersampler_on(&r);
+		r.start_maxd *= r.s_kernel;
+	}
+	
+	//close_screen(&r);
+	if (!flag && !r.tile_mode)
 		render(&r);
-	mlx_loop(r.mlx_connect);
+	else if (r.tile_mode)
+	{
+		//todo
+		//speed
+		//r->iters overflow, break  up
+		//set namer to use tiled_<original file name>.png
+		//set new level read in here
+		//tiled mode flag -t24 = tiled s_kernel = 24, need also x and y # of tiles... maybe -t24xy, ex t2423
+		//currently x and y determined by tile w, h and set in render_tiles()
+
+		/* set_supersampler_off(&r);
+    	r.s_kernel = 24;
+		set_supersampler_on(&r); */
+
+		render_tiles(&r);
+	}
+	if (!r.tile_mode)
+		mlx_loop(r.mlx_connect);
 	return (0);
 }
+
+

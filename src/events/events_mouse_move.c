@@ -152,6 +152,12 @@ int	mouse_release(int button, int x, int y, t_game *game)
 	if (button == 1 && con->dragging)
 	{
 		con->dragging = false;
+		if (con->knob > 13 && con->knob < 17)
+		{
+			free(game->wheel->colors);
+			if (!set_color_wheel(game->wheel))
+				clear_all(game);
+		}
 			con->knob = -1;
 		render(game);
 	}

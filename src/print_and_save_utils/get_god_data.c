@@ -117,14 +117,9 @@ void deserialize_game_data(t_game *game, char **data)
     game->jump_to_center = jump_to_center_temp;
     game->mouse_zoom = mouse_zoom_temp;
     game->supersample = supersample_temp;
-	double rad_times_zoom = game->r * game->zoom;
+	game->ratio_change = game->dist_ratio / (2 - game->dist_ratio);
 	game->area_factor = .25 * (double)game->sides * sin(2 * M_PI / (double)game->sides);
-	if (game->dist_ratio <= .5)
-		game->iters = .5 * (8 + game->iters_change) * SQ(game->dist_ratio * rad_times_zoom) * game->area_factor;
-	else if (game->dist_ratio < 1.0 && game->dist_ratio > .5)
-		game->iters = .5 * (8 + game->iters_change) * SQ((1 - game->dist_ratio) * rad_times_zoom) * game->area_factor;
-	else //(game->dist_ratio > 1)
-		game->iters = .5 * (8 + game->iters_change) * SQ(rad_times_zoom * game->ratio_change * (game->dist_ratio - 1)) * game->area_factor;
+	reset_iters(game);
     game->layer = layer_temp;
     game->curved = curved_temp;
 
@@ -134,7 +129,7 @@ void deserialize_game_data(t_game *game, char **data)
     game->colors.color_3 = color_3;
     game->colors.color_4 = color_4;
 
-	/*** DESERIAL ADDITIONAL ROWS***/
+	/*** DESERIAL ADDITIONAL ROWS IF PRESENT***/
  	if (data[1])
 	{
 		//printf("str: %s\n", data[1]);
@@ -147,9 +142,9 @@ void deserialize_game_data(t_game *game, char **data)
 		init_wheel(game);
 
 	//set up for extra col stuff, ghost, etc.	
-	if (data[2])
+	if (data[1] && data[2])
 	{
-		printf("str: %s\n", data[2]);
+		//printf("str: %s\n", data[2]);
 		parsed = sscanf(data[2],
            "jump_to_center_col=%d;jump_to_sides_col=%d;ghost2=%d;", 
 		   &game->jump_to_center_col, &game->jump_to_sides_col, &game->ghost2);
@@ -160,5 +155,4 @@ void deserialize_game_data(t_game *game, char **data)
 		game->jump_to_sides_col = 0; 
 		game->ghost2 = 0;
 	}
-		//}
 }

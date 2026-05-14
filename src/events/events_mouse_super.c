@@ -209,7 +209,7 @@ void	w_nav_press(int x, int y, t_game *r, t_control *con)
 	con->on_w_nav = true;
 	if (check_top_buttons(r, x, y, con))
 		return ;
-	double change_val = r->r * r->dist_ratio * r->zoom * r->ratio_change;
+	double change_val = r->r * r->dist_ratio * r->zoom;// * r->ratio_change;//not quite right here
 	if ((x >= 121 && x < 141) && (y >= 164 && y < 184))
 		w_nav_arrow_change(r, ft_round(change_val * cos(M_PI / r->sides)), &r->col_shift_x);//along apothem
 	else if ((x >= 121 && x < 141) && (y >= 214 && y < 234))
@@ -317,6 +317,7 @@ void	set_supersampler_off(t_game *r)
 	r->move_y /= r->s_kernel;
 	r->col_shift_x /= r->s_kernel;
 	r->col_shift_y /= r->s_kernel;
+	r->supersample = 0;
 }
 
 void	set_supersampler_on(t_game *r)
@@ -334,6 +335,7 @@ void	set_supersampler_on(t_game *r)
 	r->move_y *= r->s_kernel;
 	r->col_shift_x *= r->s_kernel;
 	r->col_shift_y *= r->s_kernel;
+	r->supersample = 1;
 }
 
 int	supersample_handler(int keysym, t_game *r)
@@ -347,7 +349,6 @@ int	supersample_handler(int keysym, t_game *r)
 			set_supersampler_on(r);
 			ft_putstr_color("SUPERSAMPLE IN PROGRESS...\n", BOLD_BRIGHT_GREEN);
 		}
-		r->supersample = !r->supersample;
 	}
 	else if (keysym == PAD_9)
 	{

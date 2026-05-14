@@ -150,7 +150,7 @@ void	set_nav_knob_pos(t_game *r, t_control *con)
 	posy = r->move_y;
 	if (r->supersample)
 	{
-		sup = 1 / r->s_kernel;
+		sup = 1 / (double)r->s_kernel;
 		posx *= sup;
 		posy *= sup;
 	}
@@ -249,7 +249,7 @@ void	set_nav_w_knob_pos(t_game *r, t_control *con)
 	posy = (double)r->col_shift_y;
 	if (r->supersample)
 	{
-		sup = 1 / r->s_kernel;
+		sup = 1 / (double)r->s_kernel;
 		posx *= sup;
 		posy *= sup;
 	}

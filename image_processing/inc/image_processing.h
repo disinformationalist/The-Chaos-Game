@@ -45,6 +45,7 @@ typedef struct s_img
 	int		h;
 }	t_img;
 
+
 t_img			*nlm_rouselle_vars(void *mlx_ptr, t_img *img, int width, int height, int patch_size);//testing
 t_pixel 		**pad_zeros_pix(t_pixel **pix, int width, int height, int layers);
 t_pixeld		**malloc_pixel_d_matrix(int width, int height);

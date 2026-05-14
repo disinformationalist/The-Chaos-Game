@@ -234,9 +234,9 @@ int	export_png(const char *filename, t_img *img, int width, int height, png_text
 {
 	t_png_io	*png_img;
 
-	t_pixel p;
-get_pixel(&p, img, width/2, height/2);
-printf("A=%u R=%u G=%u B=%u\n", p.alpha, p.red, p.green, p.blue);
+	//t_pixel p;
+	//get_pixel(&p, img, width / 2, height / 2);
+	//printf("A=%u R=%u G=%u B=%u\n", p.alpha, p.red, p.green, p.blue);
 	png_img = (t_png_io *)malloc(sizeof(t_png_io));
 	if (!png_img)
 		return (-1);
